@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Inicia sesión en SenseTech">
+  <title>Iniciar Sesión - SenseTech</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <main id="main-content" class="auth-page">
+    <div class="auth-container animate-fade-in-up">
+      <div class="auth-card">
+        <div class="auth-header">
+          <a href="index.html">
+            <img src="icon.png" alt="SenseTech" class="logo">
+          </a>
+          <h1>Bienvenido de nuevo</h1>
+          <p>Ingresa tus credenciales para continuar</p>
+        </div>
+
+        <div class="auth-body">
+          <form id="loginForm" novalidate>
+            <div class="form-group">
+              <label for="email" class="form-label">Correo electrónico</label>
+              <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                placeholder="tu@email.com"
+                autocomplete="email"
+                required
+                aria-describedby="emailError"
+              >
+              <div id="emailError" class="form-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="password" class="form-label">Contraseña</label>
+              <div class="password-wrapper">
+                <input 
+                  type="password" 
+                  id="password" 
+                  name="password" 
+                  class="form-input" 
+                  placeholder="••••••••"
+                  autocomplete="current-password"
+                  required
+                  aria-describedby="passwordError"
+                >
+                <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
+                  <span class="eye-icon">👁️</span>
+                </button>
+              </div>
+              <div id="passwordError" class="form-error" role="alert" aria-live="polite"></div>
+            </div>
+
+            <div class="form-group" style="display: flex; justify-content: space-between; align-items: center;">
+              <label class="form-check">
+                <input type="checkbox" name="remember">
+                <span>Recordarme</span>
+              </label>
+              <a href="#" style="font-size: var(--text-sm);">¿Olvidaste tu contraseña?</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+              Iniciar Sesión
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <div class="auth-footer">
+          <p style="margin: 0;">
+            ¿No tienes una cuenta? 
+            <a href="signup.html" style="font-weight: 600;">Regístrate gratis</a>
+          </p>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: var(--space-lg);">
+        <button class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

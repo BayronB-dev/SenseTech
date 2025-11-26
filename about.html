@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Conoce más sobre SenseTech y nuestro compromiso con la accesibilidad">
+  <title>Nosotros - SenseTech</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- Navbar -->
+  <nav class="navbar" role="navigation" aria-label="Navegación principal">
+    <div class="navbar-container">
+      <a href="index.html" class="navbar-brand">
+        <img src="icon.png" alt="SenseTech Logo">
+        <span>SenseTech</span>
+      </a>
+
+      <div class="navbar-nav">
+        <a href="index.html" class="nav-link">Inicio</a>
+        <a href="about.html" class="nav-link active">Nosotros</a>
+      </div>
+
+      <div class="navbar-actions">
+        <button class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </button>
+        <a href="login.html" class="btn btn-ghost">Iniciar Sesión</a>
+        <a href="signup.html" class="btn btn-primary">Registrarse</a>
+      </div>
+
+      <button class="mobile-menu-toggle" aria-label="Menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" aria-hidden="true">
+    <a href="index.html" class="nav-link">Inicio</a>
+    <a href="about.html" class="nav-link active">Nosotros</a>
+    <div class="theme-toggle-wrapper">
+      <span>Tema</span>
+      <button class="theme-toggle" aria-label="Cambiar tema">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+        <div class="theme-toggle-thumb"></div>
+      </button>
+    </div>
+    <div class="navbar-actions">
+      <a href="login.html" class="btn btn-secondary">Iniciar Sesión</a>
+      <a href="signup.html" class="btn btn-primary">Registrarse</a>
+    </div>
+  </div>
+
+  <main id="main-content">
+    <!-- About Hero -->
+    <section class="about-hero" data-section-animate>
+      <div class="container">
+        <span class="badge badge-primary" data-animate="fade-down">Sobre Nosotros</span>
+        <h1 data-animate="fade-up">Conoce <span class="gradient-text">SenseTech</span></h1>
+        <p style="max-width: 600px; margin: 0 auto;" data-animate="fade-up" data-delay="100">
+          Una plataforma creada con pasión por la educación y el compromiso 
+          de hacer el conocimiento accesible para todos.
+        </p>
+      </div>
+    </section>
+
+    <!-- Mission Section -->
+    <section class="section" data-section-animate>
+      <div class="container">
+        <div class="about-content">
+          <div class="about-image" data-animate="fade-right">
+            <img src="icon.png" alt="SenseTech Mission" class="animate-float">
+          </div>
+          <div data-animate="fade-left">
+            <h2>Nuestra <span class="gradient-text">Misión</span></h2>
+            <p>
+              SenseTech nace de la necesidad de democratizar el acceso a recursos educativos 
+              de calidad en el campo de la Ingeniería de Sistemas. Creemos firmemente que 
+              el conocimiento no debe tener barreras.
+            </p>
+            <p>
+              Nuestra misión es proporcionar una biblioteca virtual completa, organizada y, 
+              sobre todo, accesible para todas las personas, incluyendo aquellas con 
+              dificultades visuales que tradicionalmente han enfrentado obstáculos 
+              en plataformas digitales.
+            </p>
+            <p>
+              Cada recurso en nuestra plataforma ha sido cuidadosamente seleccionado 
+              y optimizado para garantizar la mejor experiencia de aprendizaje posible.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Values Section -->
+    <section class="section" style="background: var(--bg-secondary);" data-section-animate>
+      <div class="container">
+        <div class="section-header" data-animate="fade-up">
+          <h2>Nuestros <span class="gradient-text">Valores</span></h2>
+          <p>Los principios que guían todo lo que hacemos</p>
+        </div>
+
+        <div class="features-grid">
+          <div class="card feature-card hover-lift" data-animate="fade-up" data-delay="100">
+            <div class="icon-wrapper">♿</div>
+            <h4>Accesibilidad</h4>
+            <p>Diseñamos pensando en todos los usuarios, sin excepciones. La inclusión es nuestra prioridad.</p>
+          </div>
+
+          <div class="card feature-card hover-lift" data-animate="fade-up" data-delay="200">
+            <div class="icon-wrapper">✨</div>
+            <h4>Calidad</h4>
+            <p>Cada recurso es verificado y curado para garantizar contenido de alto valor educativo.</p>
+          </div>
+
+          <div class="card feature-card hover-lift" data-animate="fade-up" data-delay="400">
+            <div class="icon-wrapper">🚀</div>
+            <h4>Innovación</h4>
+            <p>Constantemente mejoramos nuestra plataforma con nuevas funcionalidades y recursos.</p>
+          </div>
+
+          <div class="card feature-card hover-lift" data-animate="fade-up" data-delay="500">
+            <div class="icon-wrapper">🎓</div>
+            <h4>Educación</h4>
+            <p>Creemos en el poder transformador del conocimiento y la educación continua.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Accessibility Section -->
+    <section class="section" data-section-animate>
+      <div class="container">
+        <div class="about-content" style="grid-template-columns: 1fr 1fr;">
+          <div data-animate="fade-right">
+            <span class="badge badge-primary">♿ Compromiso</span>
+            <h2>¿Por qué la <span class="gradient-text">Accesibilidad</span>?</h2>
+            <p>
+              Según la Organización Mundial de la Salud, más de 2.2 mil millones de personas 
+              en el mundo tienen algún tipo de discapacidad visual. Muchas de estas personas 
+              enfrentan barreras significativas al intentar acceder a contenido educativo digital.
+            </p>
+            <p>
+              En SenseTech, hemos desarrollado un conjunto de herramientas de accesibilidad 
+              que permiten a cada usuario personalizar su experiencia según sus necesidades:
+            </p>
+            <ul style="margin-left: var(--space-lg); margin-top: var(--space-md);">
+              <li style="margin-bottom: var(--space-sm); color: var(--text-secondary);">
+                <strong style="color: var(--text-primary);">Tamaños de texto ajustables</strong> - 
+                Desde pequeño hasta extra grande
+              </li>
+              <li style="margin-bottom: var(--space-sm); color: var(--text-secondary);">
+                <strong style="color: var(--text-primary);">Modo de alto contraste</strong> - 
+                Para mejor legibilidad
+              </li>
+              <li style="margin-bottom: var(--space-sm); color: var(--text-secondary);">
+                <strong style="color: var(--text-primary);">Cursor ampliado</strong> - 
+                Facilita la navegación
+              </li>
+              <li style="color: var(--text-secondary);">
+                <strong style="color: var(--text-primary);">Lector de pantalla</strong> - 
+                Próximamente disponible
+              </li>
+            </ul>
+          </div>
+          <div class="accessibility-features" data-animate="fade-left">
+            <div class="accessibility-feature">
+              <div class="feature-icon">👁️</div>
+              <div>
+                <h5>2.2B+</h5>
+                <p>Personas con discapacidad visual en el mundo</p>
+              </div>
+            </div>
+            <div class="accessibility-feature">
+              <div class="feature-icon">📱</div>
+              <div>
+                <h5>100%</h5>
+                <p>De nuestra plataforma es responsive y accesible</p>
+              </div>
+            </div>
+            <div class="accessibility-feature">
+              <div class="feature-icon">⚙️</div>
+              <div>
+                <h5>4+</h5>
+                <p>Opciones de accesibilidad configurables</p>
+              </div>
+            </div>
+            <div class="accessibility-feature">
+              <div class="feature-icon">❤️</div>
+              <div>
+                <h5>∞</h5>
+                <p>Compromiso con la inclusión digital</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team Section -->
+    <section class="section" style="background: var(--bg-secondary);" data-section-animate>
+      <div class="container">
+        <div class="section-header" data-animate="fade-up">
+          <h2>Nuestro <span class="gradient-text">Equipo</span></h2>
+          <p>Las personas detrás de SenseTech</p>
+        </div>
+
+        <div class="team-grid">
+          <div class="card team-card hover-lift" data-animate="fade-up" data-delay="100">
+            <div class="avatar">👨‍💻</div>
+            <h4>Carlos Mendoza</h4>
+            <p class="role">Fundador & CEO</p>
+            <p>Ingeniero de Sistemas apasionado por la educación accesible.</p>
+          </div>
+
+          <div class="card team-card hover-lift" data-animate="fade-up" data-delay="200">
+            <div class="avatar">👩‍💻</div>
+            <h4>María García</h4>
+            <p class="role">Directora de Contenido</p>
+            <p>Especialista en curación de recursos educativos de calidad.</p>
+          </div>
+
+          <div class="card team-card hover-lift" data-animate="fade-up" data-delay="300">
+            <div class="avatar">👨‍🎨</div>
+            <h4>Andrés López</h4>
+            <p class="role">Diseñador UX/UI</p>
+            <p>Experto en diseño inclusivo y experiencia de usuario.</p>
+          </div>
+
+          <div class="card team-card hover-lift" data-animate="fade-up" data-delay="400">
+            <div class="avatar">👩‍🔬</div>
+            <h4>Laura Ramírez</h4>
+            <p class="role">Especialista en Accesibilidad</p>
+            <p>Dedicada a garantizar que nuestra plataforma sea para todos.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section cta-section">
+      <div class="container" data-animate="scale">
+        <h2>Únete a nuestra misión</h2>
+        <p style="max-width: 600px; margin: var(--space-lg) auto;">
+          Sé parte de una comunidad que cree en la educación accesible. 
+          Juntos podemos hacer la diferencia.
+        </p>
+        <a href="signup.html" class="btn btn-lg" style="background: white; color: var(--primary-600);">
+          Comenzar Ahora
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <div class="footer-brand">
+            <img src="icon.png" alt="SenseTech">
+            <span>SenseTech</span>
+          </div>
+          <p class="footer-description">
+            Biblioteca virtual de recursos para Ingeniería de Sistemas, 
+            diseñada con accesibilidad como prioridad.
+          </p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook">📘</a>
+            <a href="#" aria-label="Twitter">🐦</a>
+            <a href="#" aria-label="LinkedIn">💼</a>
+            <a href="#" aria-label="GitHub">💻</a>
+          </div>
+        </div>
+
+        <div>
+          <h5>Plataforma</h5>
+          <div class="footer-links">
+            <a href="index.html">Inicio</a>
+            <a href="about.html">Nosotros</a>
+            <a href="signup.html">Registrarse</a>
+            <a href="login.html">Iniciar Sesión</a>
+          </div>
+        </div>
+
+        <div>
+          <h5>Recursos</h5>
+          <div class="footer-links">
+            <a href="#">Libros</a>
+            <a href="#">PDFs</a>
+            <a href="#">Guías</a>
+            <a href="#">Documentación</a>
+          </div>
+        </div>
+
+        <div>
+          <h5>Accesibilidad</h5>
+          <div class="footer-links">
+            <a href="#">Opciones</a>
+            <a href="#">Guía de uso</a>
+            <a href="#">Soporte</a>
+            <a href="#">Feedback</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2024 SenseTech. Todos los derechos reservados.</p>
+        <p>Hecho con ❤️ para la comunidad</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

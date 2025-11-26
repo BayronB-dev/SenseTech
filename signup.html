@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Crea tu cuenta en SenseTech">
+  <title>Registrarse - SenseTech</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <main id="main-content" class="auth-page">
+    <div class="auth-container animate-fade-in-up">
+      <div class="auth-card">
+        <div class="auth-header">
+          <a href="index.html">
+            <img src="icon.png" alt="SenseTech" class="logo">
+          </a>
+          <h1>Crear cuenta</h1>
+          <p>Únete a nuestra comunidad de aprendizaje</p>
+        </div>
+
+        <!-- Steps Indicator -->
+        <div class="steps-indicator" style="padding: 0 var(--space-2xl);">
+          <div class="step active" data-step="1">
+            <span class="step-number">1</span>
+            <span>Datos</span>
+          </div>
+          <div class="step-connector"></div>
+          <div class="step" data-step="2">
+            <span class="step-number">2</span>
+            <span>Accesibilidad</span>
+          </div>
+        </div>
+
+        <div class="auth-body">
+          <!-- Step 1: Basic Info -->
+          <form id="signupForm" novalidate>
+            <div id="step1" class="signup-step">
+              <div class="form-group">
+                <label for="fullName" class="form-label">Nombre completo</label>
+                <input 
+                  type="text" 
+                  id="fullName" 
+                  name="fullName" 
+                  class="form-input" 
+                  placeholder="Tu nombre completo"
+                  autocomplete="name"
+                  required
+                  aria-describedby="fullNameError"
+                >
+                <div id="fullNameError" class="form-error" role="alert" aria-live="polite"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="email" class="form-label">Correo electrónico</label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  name="email" 
+                  class="form-input" 
+                  placeholder="tu@email.com"
+                  autocomplete="email"
+                  required
+                  aria-describedby="emailError"
+                >
+                <div id="emailError" class="form-error" role="alert" aria-live="polite"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="password" class="form-label">Contraseña</label>
+                <div class="password-wrapper">
+                  <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    class="form-input" 
+                    placeholder="Mínimo 6 caracteres"
+                    autocomplete="new-password"
+                    required
+                    minlength="6"
+                    aria-describedby="passwordError passwordStrength"
+                  >
+                  <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
+                    <span class="eye-icon">👁️</span>
+                  </button>
+                </div>
+                <div class="password-strength" id="passwordStrength">
+                  <div class="strength-bar">
+                    <div class="strength-fill"></div>
+                  </div>
+                  <span class="strength-text"></span>
+                </div>
+                <div id="passwordError" class="form-error" role="alert" aria-live="polite"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
+                <div class="password-wrapper">
+                  <input 
+                    type="password" 
+                    id="confirmPassword" 
+                    name="confirmPassword" 
+                    class="form-input" 
+                    placeholder="Repite tu contraseña"
+                    autocomplete="new-password"
+                    required
+                    aria-describedby="confirmPasswordError"
+                  >
+                  <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
+                    <span class="eye-icon">👁️</span>
+                  </button>
+                </div>
+                <div id="confirmPasswordError" class="form-error" role="alert" aria-live="polite"></div>
+              </div>
+
+              <button type="button" id="nextStep" class="btn btn-primary btn-lg" style="width: 100%;">
+                Continuar
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </button>
+            </div>
+
+            <!-- Step 2: Accessibility Options -->
+            <div id="step2" class="signup-step" style="display: none;">
+              <div class="alert alert-info" style="margin-bottom: var(--space-xl);">
+                <span>♿</span>
+                <div>
+                  <strong>Opciones de Accesibilidad</strong>
+                  <p style="margin: 0; font-size: var(--text-sm);">
+                    Configura tu experiencia según tus necesidades. Puedes cambiar estas opciones más tarde.
+                  </p>
+                </div>
+              </div>
+
+              <div class="accessibility-option">
+                <div class="accessibility-option-info">
+                  <h5>🔤 Tamaño de texto</h5>
+                  <p>Ajusta el tamaño del texto para mejor legibilidad</p>
+                </div>
+                <div class="text-size-selector">
+                  <button type="button" class="text-size-btn" data-size="small">A</button>
+                  <button type="button" class="text-size-btn active" data-size="medium">A</button>
+                  <button type="button" class="text-size-btn" data-size="large" style="font-size: 1.1em;">A</button>
+                  <button type="button" class="text-size-btn" data-size="extra-large" style="font-size: 1.2em;">A</button>
+                </div>
+              </div>
+
+              <div class="accessibility-option">
+                <div class="accessibility-option-info">
+                  <h5>🎨 Alto contraste</h5>
+                  <p>Aumenta el contraste para mejor visibilidad</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" name="highContrast" id="highContrast">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="accessibility-option">
+                <div class="accessibility-option-info">
+                  <h5>🖱️ Cursor grande</h5>
+                  <p>Aumenta el tamaño del cursor para facilitar la navegación</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" name="largeCursor" id="largeCursor">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="accessibility-option" style="opacity: 0.6;">
+                <div class="accessibility-option-info">
+                  <h5>🔊 Lector de pantalla <span class="badge badge-coming-soon">Próximamente</span></h5>
+                  <p>Compatibilidad mejorada con lectores de pantalla</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" name="screenReader" id="screenReader" disabled>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div class="form-group">
+                <label class="form-check">
+                  <input type="checkbox" name="terms" id="terms" required>
+                  <span>Acepto los <a href="#">términos y condiciones</a> y la <a href="#">política de privacidad</a></span>
+                </label>
+                <div id="termsError" class="form-error" role="alert" aria-live="polite"></div>
+              </div>
+
+              <div style="display: flex; gap: var(--space-md);">
+                <button type="button" id="prevStep" class="btn btn-secondary btn-lg" style="flex: 1;">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                  Atrás
+                </button>
+                <button type="submit" class="btn btn-primary btn-lg" style="flex: 2;">
+                  Crear Cuenta
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="auth-footer">
+          <p style="margin: 0;">
+            ¿Ya tienes una cuenta? 
+            <a href="login.html" style="font-weight: 600;">Inicia sesión</a>
+          </p>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: var(--space-lg);">
+        <button class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/main.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

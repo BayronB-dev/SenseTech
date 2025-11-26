@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tu biblioteca personal en SenseTech">
+  <title>Inicio - SenseTech</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- Navbar (Logged In) -->
+  <nav class="navbar" role="navigation" aria-label="Navegación principal">
+    <div class="navbar-container">
+      <a href="home.html" class="navbar-brand">
+        <img src="icon.png" alt="SenseTech Logo">
+        <span>SenseTech</span>
+      </a>
+
+      <div class="navbar-nav">
+        <a href="home.html" class="nav-link active">Inicio</a>
+        <a href="#" class="nav-link">Biblioteca <span class="badge badge-coming-soon" style="margin-left: 4px;">Pronto</span></a>
+      </div>
+
+      <div class="navbar-actions">
+        <button class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </button>
+
+        <!-- User Menu -->
+        <div class="user-menu dropdown">
+          <button class="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+            <div class="avatar" id="userAvatar">U</div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          <div class="user-menu-dropdown">
+            <div class="user-menu-header">
+              <div class="user-name" id="userName">Usuario</div>
+              <div class="user-email" id="userEmail">usuario@email.com</div>
+            </div>
+            <a href="preferences.html" class="user-menu-item">
+              <span>👤</span> Información Personal
+            </a>
+            <a href="preferences.html#accessibility" class="user-menu-item">
+              <span>♿</span> Accesibilidad
+            </a>
+            <div class="user-menu-divider"></div>
+            <button class="user-menu-item danger" id="logoutBtn">
+              <span>🚪</span> Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button class="mobile-menu-toggle" aria-label="Menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" aria-hidden="true">
+    <a href="home.html" class="nav-link active">Inicio</a>
+    <a href="#" class="nav-link">Biblioteca <span class="badge badge-coming-soon">Pronto</span></a>
+    <div class="theme-toggle-wrapper">
+      <span>Tema</span>
+      <button class="theme-toggle" aria-label="Cambiar tema">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+        <div class="theme-toggle-thumb"></div>
+      </button>
+    </div>
+    <div class="navbar-actions">
+      <a href="preferences.html" class="btn btn-secondary">Mi Perfil</a>
+      <button class="btn btn-ghost" id="mobileLogoutBtn">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <main id="main-content" class="dashboard">
+    <div class="container">
+      <!-- Welcome Header -->
+      <div class="dashboard-header" data-animate="fade-down">
+        <div class="welcome-message">
+          <h1>Hola, <span class="gradient-text" id="welcomeName">Usuario</span> 👋</h1>
+          <p>Continúa tu viaje de aprendizaje. Aquí tienes tus recursos.</p>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <!-- Main Content -->
+        <div class="dashboard-main">
+          <!-- Continue Reading Section -->
+          <div class="dashboard-section" data-animate="fade-up">
+            <div class="section-title">
+              <h3>📖 Continuar leyendo</h3>
+              <a href="#" class="btn btn-ghost btn-sm">Ver todo</a>
+            </div>
+
+            <div class="continue-card hover-lift">
+              <div class="continue-image">📘</div>
+              <div class="continue-info">
+                <span class="resource-type">PDF</span>
+                <h5>Fundamentos de Programación</h5>
+                <p class="progress-text">Página 45 de 245 • 18% completado</p>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 18%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="continue-card hover-lift" style="margin-top: var(--space-md);">
+              <div class="continue-image">📗</div>
+              <div class="continue-info">
+                <span class="resource-type">Libro</span>
+                <h5>Estructuras de Datos en Java</h5>
+                <p class="progress-text">Página 120 de 380 • 32% completado</p>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 32%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Featured Resources -->
+          <div class="dashboard-section" data-animate="fade-up" data-delay="100">
+            <div class="section-title">
+              <h3>⭐ Recursos destacados</h3>
+              <a href="#" class="btn btn-ghost btn-sm">Ver más</a>
+            </div>
+
+            <div class="resources-grid">
+              <div class="card resource-card hover-lift">
+                <div class="resource-image">📕</div>
+                <div class="resource-content">
+                  <span class="resource-type">Nuevo</span>
+                  <h5>Algoritmos y Complejidad</h5>
+                  <p>Análisis de algoritmos y notación Big O.</p>
+                  <div class="resource-meta">
+                    <span>📄 180 págs</span>
+                    <span>⭐ 4.9</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card resource-card hover-lift">
+                <div class="resource-image">📙</div>
+                <div class="resource-content">
+                  <span class="resource-type">Popular</span>
+                  <h5>Desarrollo Web Moderno</h5>
+                  <p>HTML, CSS, JavaScript y frameworks.</p>
+                  <div class="resource-meta">
+                    <span>📄 320 págs</span>
+                    <span>⭐ 4.8</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card resource-card hover-lift">
+                <div class="resource-image">📓</div>
+                <div class="resource-content">
+                  <span class="resource-type">Guía</span>
+                  <h5>Git y Control de Versiones</h5>
+                  <p>Domina Git desde cero hasta avanzado.</p>
+                  <div class="resource-meta">
+                    <span>📄 95 págs</span>
+                    <span>⭐ 4.7</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Explore Library -->
+          <div class="dashboard-section" data-animate="fade-up" data-delay="200">
+            <div class="section-title">
+              <h3>🔍 Explorar biblioteca</h3>
+            </div>
+
+            <div class="card" style="padding: var(--space-2xl); text-align: center; background: var(--gradient-hero);">
+              <div style="font-size: 4rem; margin-bottom: var(--space-md);">📚</div>
+              <h4>Biblioteca completa</h4>
+              <p style="max-width: 400px; margin: var(--space-sm) auto var(--space-lg);">
+                Accede a nuestra colección completa de recursos organizados por categoría.
+              </p>
+              <button class="btn btn-primary" disabled>
+                Próximamente
+                <span class="badge badge-coming-soon" style="margin-left: 8px;">En desarrollo</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Categories -->
+          <div class="dashboard-section" data-animate="fade-up" data-delay="300">
+            <div class="section-title">
+              <h3>📂 Categorías populares</h3>
+              <a href="#" class="btn btn-ghost btn-sm">Ver todas</a>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-md);">
+              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
+                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">💻</div>
+                <h6>Programación</h6>
+                <small style="color: var(--text-muted);">45 recursos</small>
+              </div>
+              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
+                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🗄️</div>
+                <h6>Bases de Datos</h6>
+                <small style="color: var(--text-muted);">32 recursos</small>
+              </div>
+              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
+                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🌐</div>
+                <h6>Redes</h6>
+                <small style="color: var(--text-muted);">28 recursos</small>
+              </div>
+              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
+                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🔒</div>
+                <h6>Seguridad</h6>
+                <small style="color: var(--text-muted);">21 recursos</small>
+              </div>
+              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
+                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">📊</div>
+                <h6>Data Science</h6>
+                <small style="color: var(--text-muted);">38 recursos</small>
+              </div>
+              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
+                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">☁️</div>
+                <h6>Cloud</h6>
+                <small style="color: var(--text-muted);">19 recursos</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="dashboard-sidebar">
+          <!-- Quick Stats -->
+          <div class="dashboard-section" data-animate="fade-left">
+            <h4 style="margin-bottom: var(--space-lg);">📊 Tu progreso</h4>
+            <div class="quick-stats">
+              <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-value">12</div>
+                <div class="stat-label">Recursos leídos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value">24h</div>
+                <div class="stat-label">Tiempo de lectura</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-value">7</div>
+                <div class="stat-label">Días seguidos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value">5</div>
+                <div class="stat-label">Favoritos</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div class="dashboard-section" data-animate="fade-left" data-delay="100">
+            <h4 style="margin-bottom: var(--space-lg);">🕐 Actividad reciente</h4>
+            <div class="card" style="padding: 0;">
+              <div style="padding: var(--space-md); border-bottom: 1px solid var(--border-color); display: flex; gap: var(--space-sm); align-items: center;">
+                <span style="font-size: 1.2rem;">📖</span>
+                <div style="flex: 1; min-width: 0;">
+                  <p style="margin: 0; font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Abriste "Fundamentos de Programación"</p>
+                  <small style="color: var(--text-muted);">Hace 2 horas</small>
+                </div>
+              </div>
+              <div style="padding: var(--space-md); border-bottom: 1px solid var(--border-color); display: flex; gap: var(--space-sm); align-items: center;">
+                <span style="font-size: 1.2rem;">⭐</span>
+                <div style="flex: 1; min-width: 0;">
+                  <p style="margin: 0; font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Agregaste a favoritos "Git Avanzado"</p>
+                  <small style="color: var(--text-muted);">Ayer</small>
+                </div>
+              </div>
+              <div style="padding: var(--space-md); display: flex; gap: var(--space-sm); align-items: center;">
+                <span style="font-size: 1.2rem;">✅</span>
+                <div style="flex: 1; min-width: 0;">
+                  <p style="margin: 0; font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Completaste "Intro a SQL"</p>
+                  <small style="color: var(--text-muted);">Hace 3 días</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accessibility Quick Settings -->
+          <div class="dashboard-section" data-animate="fade-left" data-delay="200">
+            <h4 style="margin-bottom: var(--space-lg);">♿ Accesibilidad rápida</h4>
+            <div class="card" style="padding: var(--space-lg);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+                <span style="font-size: var(--text-sm);">Alto contraste</span>
+                <label class="toggle-switch" style="transform: scale(0.8);">
+                  <input type="checkbox" id="quickHighContrast">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
+                <span style="font-size: var(--text-sm);">Cursor grande</span>
+                <label class="toggle-switch" style="transform: scale(0.8);">
+                  <input type="checkbox" id="quickLargeCursor">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+              <a href="preferences.html#accessibility" class="btn btn-ghost btn-sm" style="width: 100%; margin-top: var(--space-sm);">
+                Más opciones
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" style="margin-top: var(--space-3xl);">
+    <div class="container">
+      <div class="footer-bottom" style="border: none; padding-top: 0;">
+        <p>&copy; 2024 SenseTech. Todos los derechos reservados.</p>
+        <p>Hecho con ❤️ para la comunidad</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>

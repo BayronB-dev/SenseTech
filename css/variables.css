@@ -1,0 +1,198 @@
+/* ========================================
+   SenseTech - CSS Variables & Theme System
+   ======================================== */
+
+:root {
+  /* Primary Colors */
+  --primary-50: #e6f4ff;
+  --primary-100: #bae0ff;
+  --primary-200: #8dcaff;
+  --primary-300: #5fb3ff;
+  --primary-400: #3a9eff;
+  --primary-500: #1a88ff;
+  --primary-600: #0070e0;
+  --primary-700: #0058b0;
+  --primary-800: #004080;
+  --primary-900: #002850;
+
+  /* Secondary Colors - Orange/Amber */
+  --secondary-50: #fff7e6;
+  --secondary-100: #ffe7ba;
+  --secondary-200: #ffd68a;
+  --secondary-300: #ffc45a;
+  --secondary-400: #ffb32a;
+  --secondary-500: #ffa200;
+  --secondary-600: #d98a00;
+  --secondary-700: #b37200;
+  --secondary-800: #8c5a00;
+  --secondary-900: #664200;
+
+  /* Neutral Colors */
+  --gray-50: #f8fafc;
+  --gray-100: #f1f5f9;
+  --gray-200: #e2e8f0;
+  --gray-300: #cbd5e1;
+  --gray-400: #94a3b8;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #334155;
+  --gray-800: #1e293b;
+  --gray-900: #0f172a;
+
+  /* Success, Warning, Error */
+  --success-500: #22c55e;
+  --success-600: #16a34a;
+  --warning-500: #f59e0b;
+  --warning-600: #d97706;
+  --error-500: #ef4444;
+  --error-600: #dc2626;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px rgba(26, 136, 255, 0.3);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 350ms ease;
+  --transition-bounce: 500ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  /* Font Sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-6xl: 3.75rem;
+
+  /* Z-Index */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-tooltip: 400;
+}
+
+/* Light Theme (Default) */
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-elevated: #ffffff;
+  
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #64748b;
+  --text-muted: #94a3b8;
+  --text-inverse: #ffffff;
+  
+  --border-color: #e2e8f0;
+  --border-hover: #cbd5e1;
+  
+  --accent-primary: var(--primary-500);
+  --accent-secondary: var(--secondary-500);
+  
+  --navbar-bg: rgba(255, 255, 255, 0.9);
+  --card-shadow: var(--shadow-md);
+  
+  --gradient-hero: linear-gradient(135deg, #e6f4ff 0%, #fff7e6 100%);
+  --gradient-accent: linear-gradient(135deg, var(--primary-500) 0%, var(--secondary-500) 100%);
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-card: #1e293b;
+  --bg-elevated: #334155;
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #94a3b8;
+  --text-muted: #64748b;
+  --text-inverse: #0f172a;
+  
+  --border-color: #334155;
+  --border-hover: #475569;
+  
+  --accent-primary: var(--primary-400);
+  --accent-secondary: var(--secondary-400);
+  
+  --navbar-bg: rgba(15, 23, 42, 0.95);
+  --card-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  
+  --gradient-hero: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  --gradient-accent: linear-gradient(135deg, var(--primary-400) 0%, var(--secondary-400) 100%);
+}
+
+/* High Contrast Mode */
+[data-high-contrast="true"] {
+  --text-primary: #000000 !important;
+  --text-secondary: #1a1a1a !important;
+  --bg-primary: #ffffff !important;
+  --bg-secondary: #f0f0f0 !important;
+  --border-color: #000000 !important;
+  --accent-primary: #0000cc !important;
+}
+
+[data-theme="dark"][data-high-contrast="true"] {
+  --text-primary: #ffffff !important;
+  --text-secondary: #f0f0f0 !important;
+  --bg-primary: #000000 !important;
+  --bg-secondary: #1a1a1a !important;
+  --border-color: #ffffff !important;
+  --accent-primary: #66b3ff !important;
+}
+
+/* Text Size Modifiers */
+[data-text-size="small"] {
+  font-size: 14px;
+}
+
+[data-text-size="medium"] {
+  font-size: 16px;
+}
+
+[data-text-size="large"] {
+  font-size: 18px;
+}
+
+[data-text-size="extra-large"] {
+  font-size: 20px;
+}
+
+/* Large Cursor */
+[data-large-cursor="true"] * {
+  cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="%23000" stroke="%23fff" stroke-width="1" d="M4 4l20 8-8 4-4 8z"/></svg>') 4 4, auto !important;
+}
+
+[data-large-cursor="true"] a,
+[data-large-cursor="true"] button,
+[data-large-cursor="true"] [role="button"] {
+  cursor: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="%23000" stroke="%23fff" stroke-width="1" d="M10 6v20l4-4h8z"/></svg>') 10 6, pointer !important;
+}

@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SenseTech - Biblioteca virtual de recursos para Ingeniería de Sistemas con enfoque en accesibilidad">
+  <title>SenseTech - Biblioteca Virtual Accesible</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <!-- Skip Link for Accessibility -->
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- Navbar -->
+  <nav class="navbar" role="navigation" aria-label="Navegación principal">
+    <div class="navbar-container">
+      <a href="index.html" class="navbar-brand">
+        <img src="icon.png" alt="SenseTech Logo">
+        <span>SenseTech</span>
+      </a>
+
+      <div class="navbar-nav">
+        <a href="index.html" class="nav-link active">Inicio</a>
+        <a href="about.html" class="nav-link">Nosotros</a>
+      </div>
+
+      <div class="navbar-actions">
+        <button class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </button>
+        <a href="login.html" class="btn btn-ghost">Iniciar Sesión</a>
+        <a href="signup.html" class="btn btn-primary">Registrarse</a>
+      </div>
+
+      <button class="mobile-menu-toggle" aria-label="Menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" aria-hidden="true">
+    <a href="index.html" class="nav-link active">Inicio</a>
+    <a href="about.html" class="nav-link">Nosotros</a>
+    <div class="theme-toggle-wrapper">
+      <span>Tema</span>
+      <button class="theme-toggle" aria-label="Cambiar tema">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+        <div class="theme-toggle-thumb"></div>
+      </button>
+    </div>
+    <div class="navbar-actions">
+      <a href="login.html" class="btn btn-secondary">Iniciar Sesión</a>
+      <a href="signup.html" class="btn btn-primary">Registrarse</a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main id="main-content">
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-pattern"></div>
+      <div class="container">
+        <div class="hero-content">
+          <div class="hero-text" data-animate="fade-right" >
+            <h1>
+              Aprende sin <span class="gradient-text">límites</span>,
+              <br>accede sin barreras
+            </h1>
+            <p class="subtitle">
+              La primera biblioteca virtual de recursos de Ingeniería de Sistemas 
+              diseñada pensando en la accesibilidad. PDFs, guías, libros y más, 
+              al alcance de todos.
+            </p>
+            <div class="hero-buttons">
+              <a href="signup.html" class="btn btn-primary btn-lg">
+                Comenzar Gratis
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </a>
+              <a href="about.html" class="btn btn-secondary btn-lg">
+                Conocer Más
+              </a>
+            </div>
+            <div class="hero-stats">
+              <div class="stat-item" data-animate="fade-up" data-delay="200">
+                <div class="stat-number">500+</div>
+                <div class="stat-label">Recursos</div>
+              </div>
+              <div class="stat-item" data-animate="fade-up" data-delay="300">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Categorías</div>
+              </div>
+              <div class="stat-item" data-animate="fade-up" data-delay="400">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Accesible</div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-image" data-animate="fade-left" style="padding-top: 20px;">
+            <!-- Modern 3D Hero Visual -->
+            <div class="hero-visual">
+              <!-- Orbit Rings -->
+              <div class="orbit-ring ring-1">
+                <div class="orbit-dot"></div>
+              </div>
+              <div class="orbit-ring ring-2">
+                <div class="orbit-dot"></div>
+              </div>
+              
+              <!-- Floating Elements -->
+              <div class="floating-element el-1">📚</div>
+              <div class="floating-element el-2">💡</div>
+              <div class="floating-element el-3">🎓</div>
+              <div class="floating-element el-4">🚀</div>
+              <div class="floating-element el-5">📖</div>
+              <div class="floating-element el-6">⚡</div>
+              
+              <!-- Central Element -->
+              <div class="hero-center">
+                <img src="icon.png" alt="SenseTech">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section" data-section-animate>
+      <div class="container">
+        <div class="section-header" data-animate="fade-up">
+          <h2>Todo lo que necesitas para <span class="gradient-text">aprender</span></h2>
+          <p>Recursos organizados, actualizados y accesibles para potenciar tu formación en Ingeniería de Sistemas</p>
+        </div>
+
+        <div class="features-grid">
+          <div class="card feature-card hover-lift" data-animate="fade-up" data-delay="100">
+            <div class="icon-wrapper">📚</div>
+            <h4>Biblioteca Completa</h4>
+            <p>Accede a cientos de libros, PDFs y documentaciones técnicas organizadas por tema y nivel.</p>
+          </div>
+
+          <div class="card feature-card hover-lift" data-animate="fade-up" data-delay="200">
+            <div class="icon-wrapper">📖</div>
+            <h4>Guías Prácticas</h4>
+            <p>Tutoriales paso a paso y guías de estudio creadas por expertos en cada área.</p>
+          </div>
+
+          <div class="card feature-card hover-lift" data-animate="fade-up" data-delay="400">
+            <div class="icon-wrapper">📊</div>
+            <h4>Presentaciones</h4>
+            <p>Slides y materiales visuales para complementar tu aprendizaje.</p>
+          </div>
+
+          <div class="card feature-card hover-lift" data-animate="fade-up" data-delay="600">
+            <div class="icon-wrapper">💾</div>
+            <h4>Guarda tu Progreso</h4>
+            <p>Marca tus recursos favoritos y continúa donde lo dejaste.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Accessibility Section -->
+    <section id="accessibility" class="section accessibility-section" data-section-animate>
+      <div class="container">
+        <div class="accessibility-content">
+          <div class="accessibility-text" data-animate="fade-right">
+            <span class="badge badge-primary">♿ Accesibilidad</span>
+            <h2>Diseñado para <span class="gradient-text">todos</span></h2>
+            <p>
+              En SenseTech creemos que el conocimiento debe ser accesible para todas las personas. 
+              Por eso, hemos desarrollado una plataforma con opciones de accesibilidad configurables 
+              que se adaptan a las necesidades de usuarios con dificultades visuales.
+            </p>
+            <a href="signup.html" class="btn btn-primary">
+              Crear cuenta accesible
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+          </div>
+
+          <div class="accessibility-features" data-animate="fade-left">
+            <div class="accessibility-feature">
+              <div class="feature-icon">🔤</div>
+              <div>
+                <h5>Tamaños de Texto</h5>
+                <p>Ajusta el tamaño del texto según tu comodidad visual.</p>
+              </div>
+            </div>
+
+            <div class="accessibility-feature">
+              <div class="feature-icon">🎨</div>
+              <div>
+                <h5>Alto Contraste</h5>
+                <p>Modo de alto contraste para mejor legibilidad.</p>
+              </div>
+            </div>
+
+            <div class="accessibility-feature">
+              <div class="feature-icon">🖱️</div>
+              <div>
+                <h5>Cursor Grande</h5>
+                <p>Aumenta el tamaño del cursor para facilitar la navegación.</p>
+              </div>
+            </div>
+
+            <div class="accessibility-feature">
+              <div class="feature-icon">🔊</div>
+              <div>
+                <h5>Lector de Pantalla</h5>
+                <p><span class="badge badge-coming-soon">Próximamente</span> Compatibilidad mejorada con lectores de pantalla.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resources Preview -->
+    <section class="section" data-section-animate>
+      <div class="container">
+        <div class="section-header" data-animate="fade-up">
+          <h2>Explora nuestros <span class="gradient-text">recursos</span></h2>
+          <p>Una muestra de lo que encontrarás en nuestra biblioteca</p>
+        </div>
+
+        <div class="resources-grid">
+          <div class="card resource-card hover-lift" data-animate="fade-up" data-delay="100">
+            <div class="resource-image">📘</div>
+            <div class="resource-content">
+              <span class="resource-type">PDF</span>
+              <h5>Fundamentos de Programación</h5>
+              <p>Guía completa para iniciarse en el mundo de la programación.</p>
+              <div class="resource-meta">
+                <span>📄 245 páginas</span>
+                <span>⭐ 4.8</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card resource-card hover-lift" data-animate="fade-up" data-delay="200">
+            <div class="resource-image">📗</div>
+            <div class="resource-content">
+              <span class="resource-type">Libro</span>
+              <h5>Estructuras de Datos</h5>
+              <p>Aprende sobre arrays, listas, árboles y grafos.</p>
+              <div class="resource-meta">
+                <span>📄 380 páginas</span>
+                <span>⭐ 4.9</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card resource-card hover-lift" data-animate="fade-up" data-delay="300">
+            <div class="resource-image">📙</div>
+            <div class="resource-content">
+              <span class="resource-type">Guía</span>
+              <h5>Bases de Datos SQL</h5>
+              <p>Domina las consultas SQL desde cero hasta avanzado.</p>
+              <div class="resource-meta">
+                <span>📄 120 páginas</span>
+                <span>⭐ 4.7</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card resource-card hover-lift" data-animate="fade-up" data-delay="400">
+            <div class="resource-image">📕</div>
+            <div class="resource-content">
+              <span class="resource-type">Documentación</span>
+              <h5>Redes y Protocolos</h5>
+              <p>Todo sobre TCP/IP, HTTP, DNS y más.</p>
+              <div class="resource-meta">
+                <span>📄 200 páginas</span>
+                <span>⭐ 4.6</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section cta-section" data-section-animate>
+      <div class="container" data-animate="scale">
+        <h2>¿Listo para comenzar tu viaje de aprendizaje?</h2>
+        <p style="max-width: 600px; margin: var(--space-lg) auto;">
+          Únete a nuestra comunidad y accede a cientos de recursos de calidad. 
+          Configura tu experiencia según tus necesidades de accesibilidad.
+        </p>
+        <a href="signup.html" class="btn btn-lg" style="background: white; color: var(--primary-600);">
+          Crear Cuenta Gratis
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-about">
+          <div class="footer-brand">
+            <img src="icon.png" alt="SenseTech">
+            <span>SenseTech</span>
+          </div>
+          <p class="footer-description">
+            Biblioteca virtual de recursos para Ingeniería de Sistemas, 
+            diseñada con accesibilidad como prioridad.
+          </p>
+          <div class="social-links">
+            <a href="#" aria-label="Facebook">📘</a>
+            <a href="#" aria-label="Twitter">🐦</a>
+            <a href="#" aria-label="LinkedIn">💼</a>
+            <a href="#" aria-label="GitHub">💻</a>
+          </div>
+        </div>
+
+        <div>
+          <h5>Plataforma</h5>
+          <div class="footer-links">
+            <a href="index.html">Inicio</a>
+            <a href="about.html">Nosotros</a>
+            <a href="signup.html">Registrarse</a>
+            <a href="login.html">Iniciar Sesión</a>
+          </div>
+        </div>
+
+        <div>
+          <h5>Recursos</h5>
+          <div class="footer-links">
+            <a href="#">Libros</a>
+            <a href="#">PDFs</a>
+            <a href="#">Guías</a>
+            <a href="#">Documentación</a>
+          </div>
+        </div>
+
+        <div>
+          <h5>Accesibilidad</h5>
+          <div class="footer-links">
+            <a href="#">Opciones</a>
+            <a href="#">Guía de uso</a>
+            <a href="#">Soporte</a>
+            <a href="#">Feedback</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2024 SenseTech. Todos los derechos reservados.</p>
+        <p>Hecho con ❤️ para la comunidad</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

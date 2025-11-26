@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Configura tu perfil y opciones de accesibilidad en SenseTech">
+  <title>Preferencias - SenseTech</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- Navbar (Logged In) -->
+  <nav class="navbar" role="navigation" aria-label="Navegación principal">
+    <div class="navbar-container">
+      <a href="home.html" class="navbar-brand">
+        <img src="icon.png" alt="SenseTech Logo">
+        <span>SenseTech</span>
+      </a>
+
+      <div class="navbar-nav">
+        <a href="home.html" class="nav-link">Inicio</a>
+        <a href="#" class="nav-link">Biblioteca <span class="badge badge-coming-soon" style="margin-left: 4px;">Pronto</span></a>
+        <a href="#" class="nav-link">Favoritos</a>
+        <a href="#" class="nav-link">Categorías</a>
+      </div>
+
+      <div class="navbar-actions">
+        <button class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </button>
+
+        <!-- User Menu -->
+        <div class="user-menu dropdown">
+          <button class="user-menu-trigger" aria-haspopup="true" aria-expanded="false">
+            <div class="avatar" id="userAvatar">U</div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </button>
+          <div class="user-menu-dropdown">
+            <div class="user-menu-header">
+              <div class="user-name" id="userName">Usuario</div>
+              <div class="user-email" id="userEmail">usuario@email.com</div>
+            </div>
+            <a href="preferences.html" class="user-menu-item">
+              <span>👤</span> Información Personal
+            </a>
+            <a href="preferences.html#accessibility" class="user-menu-item">
+              <span>♿</span> Accesibilidad
+            </a>
+            <div class="user-menu-divider"></div>
+            <button class="user-menu-item danger" id="logoutBtn">
+              <span>🚪</span> Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button class="mobile-menu-toggle" aria-label="Menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" aria-hidden="true">
+    <a href="home.html" class="nav-link">Inicio</a>
+    <a href="#" class="nav-link">Biblioteca <span class="badge badge-coming-soon">Pronto</span></a>
+    <a href="#" class="nav-link">Favoritos</a>
+    <a href="#" class="nav-link">Categorías</a>
+    <div class="theme-toggle-wrapper">
+      <span>Tema</span>
+      <button class="theme-toggle" aria-label="Cambiar tema">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+        <div class="theme-toggle-thumb"></div>
+      </button>
+    </div>
+    <div class="navbar-actions">
+      <a href="preferences.html" class="btn btn-secondary">Mi Perfil</a>
+      <button class="btn btn-ghost" id="mobileLogoutBtn">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <main id="main-content" class="preferences-page">
+    <div class="container">
+      <h1 data-animate="fade-down" style="margin-bottom: var(--space-2xl);">
+        ⚙️ Preferencias
+      </h1>
+
+      <div class="preferences-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="preferences-nav" data-animate="fade-right" aria-label="Navegación de preferencias">
+          <button class="preferences-nav-item active" data-section="personal">
+            <span>👤</span> Información Personal
+          </button>
+          <button class="preferences-nav-item" data-section="accessibility">
+            <span>♿</span> Accesibilidad
+          </button>
+        </nav>
+
+        <!-- Content -->
+        <div class="preferences-content" data-animate="fade-left">
+          <!-- Personal Information Section -->
+          <section id="personal" class="preferences-section active">
+            <h2>Información Personal</h2>
+
+            <!-- Photo Upload -->
+            <div class="photo-upload">
+              <div class="photo-preview">
+                <div class="avatar avatar-xl" id="profileAvatar">U</div>
+                <label for="photoInput" class="photo-upload-btn" title="Cambiar foto">
+                  📷
+                  <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                </label>
+              </div>
+              <div>
+                <h5>Foto de perfil</h5>
+                <p style="margin: 0; font-size: var(--text-sm); color: var(--text-muted);">
+                  JPG, PNG o GIF. Máximo 2MB.
+                </p>
+                <button class="btn btn-ghost btn-sm" id="removePhotoBtn" style="margin-top: var(--space-sm);">
+                  Eliminar foto
+                </button>
+              </div>
+            </div>
+
+            <!-- Personal Info Form -->
+            <form id="personalInfoForm">
+              <div class="form-group">
+                <label for="editName" class="form-label">Nombre completo</label>
+                <input 
+                  type="text" 
+                  id="editName" 
+                  name="fullName" 
+                  class="form-input" 
+                  placeholder="Tu nombre completo"
+                  required
+                >
+                <div id="editNameError" class="form-error" role="alert"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="editEmail" class="form-label">Correo electrónico</label>
+                <input 
+                  type="email" 
+                  id="editEmail" 
+                  name="email" 
+                  class="form-input" 
+                  placeholder="tu@email.com"
+                  required
+                >
+                <div id="editEmailError" class="form-error" role="alert"></div>
+              </div>
+
+              <hr style="border: none; border-top: 1px solid var(--border-color); margin: var(--space-xl) 0;">
+
+              <h4 style="margin-bottom: var(--space-lg);">🔒 Cambiar contraseña</h4>
+
+              <div class="form-group">
+                <label for="currentPassword" class="form-label">Contraseña actual</label>
+                <div class="password-wrapper">
+                  <input 
+                    type="password" 
+                    id="currentPassword" 
+                    name="currentPassword" 
+                    class="form-input" 
+                    placeholder="Tu contraseña actual"
+                  >
+                  <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
+                    <span class="eye-icon">👁️</span>
+                  </button>
+                </div>
+                <div id="currentPasswordError" class="form-error" role="alert"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="newPassword" class="form-label">Nueva contraseña</label>
+                <div class="password-wrapper">
+                  <input 
+                    type="password" 
+                    id="newPassword" 
+                    name="newPassword" 
+                    class="form-input" 
+                    placeholder="Mínimo 6 caracteres"
+                    minlength="6"
+                  >
+                  <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
+                    <span class="eye-icon">👁️</span>
+                  </button>
+                </div>
+                <div class="password-strength" id="newPasswordStrength">
+                  <div class="strength-bar">
+                    <div class="strength-fill"></div>
+                  </div>
+                  <span class="strength-text"></span>
+                </div>
+                <div id="newPasswordError" class="form-error" role="alert"></div>
+              </div>
+
+              <div class="form-group">
+                <label for="confirmNewPassword" class="form-label">Confirmar nueva contraseña</label>
+                <div class="password-wrapper">
+                  <input 
+                    type="password" 
+                    id="confirmNewPassword" 
+                    name="confirmNewPassword" 
+                    class="form-input" 
+                    placeholder="Repite la nueva contraseña"
+                  >
+                  <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
+                    <span class="eye-icon">👁️</span>
+                  </button>
+                </div>
+                <div id="confirmNewPasswordError" class="form-error" role="alert"></div>
+              </div>
+
+              <div style="display: flex; gap: var(--space-md); justify-content: flex-end; margin-top: var(--space-xl);">
+                <button type="button" class="btn btn-secondary" id="cancelPersonalBtn">Cancelar</button>
+                <button type="submit" class="btn btn-primary">
+                  Guardar cambios
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12l5 5L20 7"/>
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Accessibility Section -->
+          <section id="accessibility" class="preferences-section">
+            <h2>Accesibilidad</h2>
+
+            <div class="alert alert-info" style="margin-bottom: var(--space-xl);">
+              <span>♿</span>
+              <div>
+                <strong>Personaliza tu experiencia</strong>
+                <p style="margin: 0; font-size: var(--text-sm);">
+                  Estas opciones te permiten adaptar la plataforma a tus necesidades visuales.
+                  Los cambios se aplican inmediatamente.
+                </p>
+              </div>
+            </div>
+
+            <form id="accessibilityForm">
+              <!-- Text Size -->
+              <div class="accessibility-option">
+                <div class="accessibility-option-info">
+                  <h5>🔤 Tamaño de texto</h5>
+                  <p>Ajusta el tamaño del texto en toda la plataforma</p>
+                </div>
+                <div class="text-size-selector">
+                  <button type="button" class="text-size-btn" data-size="small" title="Pequeño">A</button>
+                  <button type="button" class="text-size-btn active" data-size="medium" title="Mediano">A</button>
+                  <button type="button" class="text-size-btn" data-size="large" title="Grande" style="font-size: 1.1em;">A</button>
+                  <button type="button" class="text-size-btn" data-size="extra-large" title="Extra grande" style="font-size: 1.2em;">A</button>
+                </div>
+              </div>
+
+              <!-- High Contrast -->
+              <div class="accessibility-option">
+                <div class="accessibility-option-info">
+                  <h5>🎨 Alto contraste</h5>
+                  <p>Aumenta el contraste entre texto y fondo para mejor legibilidad</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" name="highContrast" id="prefHighContrast">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Large Cursor -->
+              <div class="accessibility-option">
+                <div class="accessibility-option-info">
+                  <h5>🖱️ Cursor grande</h5>
+                  <p>Aumenta el tamaño del cursor para facilitar la navegación</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" name="largeCursor" id="prefLargeCursor">
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Screen Reader (Coming Soon) -->
+              <div class="accessibility-option" style="opacity: 0.6;">
+                <div class="accessibility-option-info">
+                  <h5>
+                    🔊 Lector de pantalla 
+                    <span class="badge badge-coming-soon">Próximamente</span>
+                  </h5>
+                  <p>Compatibilidad mejorada con lectores de pantalla como NVDA y JAWS</p>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" name="screenReader" id="prefScreenReader" disabled>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Preview -->
+              <div class="card" style="margin-top: var(--space-xl); padding: var(--space-xl); background: var(--bg-secondary);">
+                <h5 style="margin-bottom: var(--space-md);">👁️ Vista previa</h5>
+                <p style="margin-bottom: var(--space-sm);">
+                  Este es un texto de ejemplo para que puedas ver cómo se aplican tus configuraciones de accesibilidad.
+                </p>
+                <p style="font-size: var(--text-sm); color: var(--text-muted);">
+                  Los cambios se guardan automáticamente y se aplican en toda la plataforma.
+                </p>
+              </div>
+
+              <div style="display: flex; gap: var(--space-md); justify-content: flex-end; margin-top: var(--space-xl);">
+                <button type="button" class="btn btn-secondary" id="resetAccessibilityBtn">
+                  Restablecer valores
+                </button>
+                <button type="submit" class="btn btn-primary">
+                  Guardar preferencias
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12l5 5L20 7"/>
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer" style="margin-top: var(--space-3xl);">
+    <div class="container">
+      <div class="footer-bottom" style="border: none; padding-top: 0;">
+        <p>&copy; 2024 SenseTech. Todos los derechos reservados.</p>
+        <p>Hecho con ❤️ para la comunidad</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Success Toast -->
+  <div id="toast" class="toast" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--success-500);
+    color: white;
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all var(--transition-base);
+    z-index: 1000;
+  ">
+    <span>✅</span> Cambios guardados correctamente
+  </div>
+
+  <script src="js/main.js"></script>
+  <script src="js/preferences.js"></script>
+</body>
+</html>
