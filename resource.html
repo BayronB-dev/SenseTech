@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Detalle del recurso - SenseTech">
+  <title>Recurso - SenseTech</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/resource.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="home.html" class="navbar-brand">
+        <img src="icon.png" alt="SenseTech" class="navbar-logo">
+        <span>SenseTech</span>
+      </a>
+
+      <div class="navbar-nav">
+        <a href="home.html" class="nav-link">Inicio</a>
+        <a href="library.html" class="nav-link">Biblioteca</a>
+      </div>
+
+      <div class="navbar-actions">
+        <button class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </button>
+
+        <div class="user-menu">
+          <button class="user-menu-trigger" aria-expanded="false" aria-haspopup="true">
+            <div class="avatar" id="userAvatar">U</div>
+          </button>
+          <div class="user-menu-dropdown" role="menu">
+            <div class="user-menu-header">
+              <div class="user-name" id="userName">Usuario</div>
+              <div class="user-email" id="userEmail">usuario@email.com</div>
+            </div>
+            <a href="preferences.html" class="user-menu-item">
+              <span>👤</span> Mi Perfil
+            </a>
+            <a href="preferences.html#accessibility" class="user-menu-item">
+              <span>♿</span> Accesibilidad
+            </a>
+            <div class="user-menu-divider"></div>
+            <button class="user-menu-item danger" id="logoutBtn">
+              <span>🚪</span> Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button class="mobile-menu-toggle" aria-label="Menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" aria-hidden="true">
+    <a href="home.html" class="nav-link">Inicio</a>
+    <a href="library.html" class="nav-link">Biblioteca</a>
+    <div class="theme-toggle-wrapper">
+      <span>Tema</span>
+      <button class="theme-toggle" aria-label="Cambiar tema">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+        <div class="theme-toggle-thumb"></div>
+      </button>
+    </div>
+    <div class="navbar-actions">
+      <a href="preferences.html" class="btn btn-secondary">Mi Perfil</a>
+      <button class="btn btn-ghost" id="mobileLogoutBtn">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <main id="main-content" class="resource-page">
+    <div class="container">
+      <!-- Back Button -->
+      <a href="library.html" class="back-link" data-animate="fade-right">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Volver a la Biblioteca
+      </a>
+
+      <!-- Loading State -->
+      <div class="resource-loading" id="loadingState">
+        <div class="loading-spinner"></div>
+        <p>Cargando recurso...</p>
+      </div>
+
+      <!-- Error State -->
+      <div class="resource-error" id="errorState" style="display: none;">
+        <div class="error-icon">😕</div>
+        <h2>Recurso no encontrado</h2>
+        <p>El recurso que buscas no existe o ha sido eliminado.</p>
+        <a href="library.html" class="btn btn-primary">Ir a la Biblioteca</a>
+      </div>
+
+      <!-- Resource Content -->
+      <div class="resource-content" id="resourceContent" style="display: none;">
+        <!-- Resource Header -->
+        <div class="resource-header" data-animate="fade-up">
+          <div class="resource-cover" id="resourceCover">
+            <span class="resource-icon">📚</span>
+          </div>
+          
+          <div class="resource-info">
+            <div class="resource-badges">
+              <span class="resource-type-badge" id="resourceType">Libro</span>
+              <span class="resource-category-badge" id="resourceCategory">Programación</span>
+            </div>
+            
+            <h1 class="resource-title" id="resourceTitle">Título del Recurso</h1>
+            <p class="resource-author" id="resourceAuthor">Autor del recurso</p>
+            
+            <div class="resource-stats">
+              <div class="stat">
+                <span class="stat-icon">👁️</span>
+                <span id="viewCount">0</span> vistas
+              </div>
+              <div class="stat">
+                <span class="stat-icon">❤️</span>
+                <span id="favoriteCount">0</span> favoritos
+              </div>
+              <div class="stat">
+                <span class="stat-icon">📅</span>
+                <span id="dateAdded">--</span>
+              </div>
+            </div>
+
+            <div class="resource-actions">
+              <button class="btn btn-primary btn-lg" id="startReadingBtn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Comenzar a leer
+              </button>
+              <button class="btn btn-secondary btn-lg" id="favoriteBtn">
+                <span id="favoriteIcon">🤍</span>
+                <span id="favoriteText">Agregar a favoritos</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Section -->
+        <div class="resource-progress-section" id="progressSection" data-animate="fade-up">
+          <div class="progress-header">
+            <h3>📊 Tu progreso</h3>
+            <span class="progress-percentage" id="progressPercentage">0%</span>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+          </div>
+          <p class="progress-text" id="progressText">Aún no has comenzado este recurso</p>
+        </div>
+
+        <!-- Description Section -->
+        <div class="resource-section" data-animate="fade-up">
+          <h2>📝 Descripción</h2>
+          <div class="resource-description" id="resourceDescription">
+            <p>Descripción del recurso...</p>
+          </div>
+        </div>
+
+        <!-- Details Section -->
+        <div class="resource-section" data-animate="fade-up">
+          <h2>📋 Detalles</h2>
+          <div class="resource-details">
+            <div class="detail-item">
+              <span class="detail-label">Tipo</span>
+              <span class="detail-value" id="detailType">--</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Categoría</span>
+              <span class="detail-value" id="detailCategory">--</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Autor</span>
+              <span class="detail-value" id="detailAuthor">--</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Fecha de publicación</span>
+              <span class="detail-value" id="detailDate">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Related Resources -->
+        <div class="resource-section" data-animate="fade-up">
+          <h2>📚 Recursos relacionados</h2>
+          <div class="related-resources" id="relatedResources">
+            <!-- Will be populated dynamically -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="border: none; padding-top: 0;">
+        <p>&copy; 2024 SenseTech. Todos los derechos reservados.</p>
+        <p>Hecho con ❤️ para la comunidad</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/resource.js"></script>
+</body>
+</html>

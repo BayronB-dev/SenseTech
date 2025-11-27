@@ -18,6 +18,14 @@
 
   <main id="main-content" class="auth-page">
     <div class="auth-container animate-fade-in-up">
+      <!-- Back button -->
+      <a href="index.html" class="auth-back-btn" aria-label="Volver al inicio">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Volver
+      </a>
+      
       <div class="auth-card">
         <div class="auth-header">
           <a href="index.html">
@@ -89,7 +97,7 @@
                     aria-describedby="passwordError passwordStrength"
                   >
                   <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
-                    <span class="eye-icon">👁️</span>
+                    <span class="eye-icon"></span>
                   </button>
                 </div>
                 <div class="password-strength" id="passwordStrength">
@@ -115,7 +123,7 @@
                     aria-describedby="confirmPasswordError"
                   >
                   <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
-                    <span class="eye-icon">👁️</span>
+                    <span class="eye-icon"></span>
                   </button>
                 </div>
                 <div id="confirmPasswordError" class="form-error" role="alert" aria-live="polite"></div>
@@ -231,6 +239,9 @@
     </div>
   </main>
 
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script src="js/auth.js"></script>
 </body>

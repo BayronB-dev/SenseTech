@@ -1,6 +1,6 @@
 /**
  * SenseTech - Authentication JavaScript
- * Login and Signup form handling with validations
+ * Login and Signup form handling with Supabase integration
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -24,6 +24,8 @@ function initLoginForm() {
     
     const email = form.email.value.trim();
     const password = form.password.value;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
     
     // Clear previous errors
     clearErrors(form);
@@ -46,36 +48,30 @@ function initLoginForm() {
     
     if (!isValid) return;
     
-    // Check credentials
-    const users = getUsers();
-    const user = users.find(u => u.email === email);
-    
-    if (!user) {
-      showError('email', 'No existe una cuenta con este correo');
-      return;
-    }
-    
-    if (user.password !== password) {
-      showError('password', 'Contraseña incorrecta');
-      return;
-    }
-    
-    // Login successful
-    setCurrentUser(user);
-    
-    // Apply user's accessibility settings
-    if (user.accessibility) {
-      saveAccessibilitySettings(user.accessibility);
-    }
-    
-    // Redirect to home
-    const submitBtn = form.querySelector('button[type="submit"]');
+    // Show loading state
     submitBtn.innerHTML = '<span class="loading-spinner" style="width: 20px; height: 20px;"></span> Ingresando...';
     submitBtn.disabled = true;
     
-    setTimeout(() => {
-      window.location.href = 'home.html';
-    }, 1000);
+    // Authenticate with Supabase
+    const { data, error } = await supabaseSignIn(email, password);
+    
+    if (error) {
+      submitBtn.innerHTML = originalBtnText;
+      submitBtn.disabled = false;
+      
+      // Handle specific errors
+      if (error.message.includes('Invalid login credentials')) {
+        showError('password', 'Correo o contraseña incorrectos');
+      } else if (error.message.includes('Email not confirmed')) {
+        showError('email', 'Por favor confirma tu correo electrónico');
+      } else {
+        showError('email', error.message || 'Error al iniciar sesión');
+      }
+      return;
+    }
+    
+    // Login successful - redirect to home
+    window.location.href = 'home.html';
   });
 }
 
@@ -114,51 +110,65 @@ function initSignupForm() {
     
     if (!validateStep2()) return;
     
-    // Gather all data
-    const userData = {
-      id: Date.now().toString(),
-      name: form.fullName.value.trim(),
-      email: form.email.value.trim(),
-      password: form.password.value,
-      photo: null,
-      accessibility: {
-        textSize: getSelectedTextSize(),
-        highContrast: form.highContrast.checked,
-        largeCursor: form.largeCursor.checked,
-        screenReader: false
-      },
-      createdAt: new Date().toISOString()
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
+    
+    // Gather accessibility settings
+    const accessibilitySettings = {
+      textSize: getSelectedTextSize(),
+      highContrast: form.highContrast.checked,
+      largeCursor: form.largeCursor.checked,
+      screenReader: false
     };
     
-    // Check if email already exists
-    const users = getUsers();
-    if (users.some(u => u.email === userData.email)) {
-      goToStep(1);
-      setTimeout(() => {
-        showError('email', 'Ya existe una cuenta con este correo');
-      }, 300);
-      return;
-    }
+    const name = form.fullName.value.trim();
+    const email = form.email.value.trim();
+    const password = form.password.value;
     
-    // Save user
-    users.push(userData);
-    saveUsers(users);
-    
-    // Log in the user
-    setCurrentUser(userData);
-    
-    // Apply accessibility settings
-    saveAccessibilitySettings(userData.accessibility);
-    applyAccessibilitySettings(userData.accessibility);
-    
-    // Show success and redirect
-    const submitBtn = form.querySelector('button[type="submit"]');
+    // Show loading state
     submitBtn.innerHTML = '<span class="loading-spinner" style="width: 20px; height: 20px;"></span> Creando cuenta...';
     submitBtn.disabled = true;
     
-    setTimeout(() => {
+    // Register with Supabase
+    const { data, error } = await supabaseSignUp(email, password, name, accessibilitySettings);
+    
+    if (error) {
+      submitBtn.innerHTML = originalBtnText;
+      submitBtn.disabled = false;
+      
+      // Handle specific errors
+      if (error.message.includes('already registered')) {
+        goToStep(1);
+        setTimeout(() => {
+          showError('email', 'Ya existe una cuenta con este correo');
+        }, 300);
+      } else if (error.message.includes('Password')) {
+        goToStep(1);
+        setTimeout(() => {
+          showError('password', error.message);
+        }, 300);
+      } else {
+        showError('terms', error.message || 'Error al crear la cuenta');
+      }
+      return;
+    }
+    
+    // Apply accessibility settings locally
+    saveAccessibilitySettings(accessibilitySettings);
+    applyAccessibilitySettings(accessibilitySettings);
+    
+    // Check if email confirmation is required
+    if (data.user && !data.session) {
+      // Email confirmation required
+      submitBtn.innerHTML = '✓ Cuenta creada';
+      showToast('Revisa tu correo para confirmar tu cuenta', 'success');
+      setTimeout(() => {
+        window.location.href = 'login.html';
+      }, 2000);
+    } else {
+      // Auto-confirmed, redirect to home
       window.location.href = 'home.html';
-    }, 1500);
+    }
   });
 }
 
@@ -325,23 +335,6 @@ function clearErrors(form) {
     error.innerHTML = '';
     error.style.display = 'none';
   });
-}
-
-// ========================================
-// USER STORAGE
-// ========================================
-
-function getUsers() {
-  try {
-    const users = localStorage.getItem('users');
-    return users ? JSON.parse(users) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveUsers(users) {
-  localStorage.setItem('users', JSON.stringify(users));
 }
 
 // ========================================

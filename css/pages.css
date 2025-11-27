@@ -448,6 +448,35 @@
   padding: var(--space-2xl) var(--space-2xl) var(--space-lg);
 }
 
+/* Auth Back Button */
+.auth-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+  margin-bottom: var(--space-lg);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+}
+
+.auth-back-btn:hover {
+  color: var(--accent-primary);
+  background: var(--bg-secondary);
+  transform: translateX(-4px);
+}
+
+.auth-back-btn svg {
+  transition: transform 0.3s ease;
+}
+
+.auth-back-btn:hover svg {
+  transform: translateX(-4px);
+}
+
 .auth-header .logo {
   width: 60px;
   height: 60px;
@@ -713,6 +742,151 @@
 .stat-card .stat-label {
   font-size: var(--text-sm);
   color: var(--text-muted);
+}
+
+/* Explore Library Card */
+.explore-library-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xl);
+  padding: var(--space-2xl);
+  background: var(--gradient-hero);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+}
+
+.explore-library-card .explore-icon {
+  font-size: 4rem;
+  flex-shrink: 0;
+}
+
+.explore-library-card .explore-content h4 {
+  margin-bottom: var(--space-sm);
+}
+
+.explore-library-card .explore-content p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+  max-width: 400px;
+}
+
+.explore-library-card .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* Categories Grid */
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--space-md);
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.category-card:hover {
+  border-color: var(--accent-primary);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.category-card .category-icon {
+  font-size: 2rem;
+  margin-bottom: var(--space-sm);
+}
+
+.category-card h6 {
+  color: var(--text-primary);
+  margin-bottom: var(--space-xs);
+}
+
+.category-card small {
+  color: var(--text-muted);
+}
+
+/* Empty State Small */
+.empty-state-small {
+  text-align: center;
+  padding: var(--space-xl);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.empty-state-small p {
+  color: var(--text-muted);
+  margin-bottom: var(--space-md);
+}
+
+/* Loading Placeholder */
+.loading-placeholder {
+  text-align: center;
+  padding: var(--space-xl);
+  color: var(--text-muted);
+}
+
+/* Favorites List */
+.favorites-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.favorite-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.favorite-item:hover {
+  border-color: var(--accent-primary);
+  background: var(--bg-secondary);
+}
+
+.favorite-icon {
+  font-size: 1.2rem;
+}
+
+.favorite-title {
+  flex: 1;
+  color: var(--text-primary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Continue Card as Link */
+a.continue-card {
+  text-decoration: none;
+  color: inherit;
+}
+
+a.continue-card:hover .continue-image {
+  transform: scale(1.05);
+}
+
+/* Resource Card as Link */
+a.resource-card {
+  text-decoration: none;
+  color: inherit;
 }
 
 /* ===== PREFERENCES PAGE ===== */

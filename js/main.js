@@ -358,8 +358,13 @@ function setCurrentUser(user) {
   localStorage.setItem('currentUser', JSON.stringify(user));
 }
 
-function logout() {
+async function logout() {
+  // Check if Supabase is available
+  if (typeof supabaseSignOut === 'function') {
+    await supabaseSignOut();
+  }
   localStorage.removeItem('currentUser');
+  localStorage.removeItem('accessibilitySettings');
   window.location.href = 'index.html';
 }
 

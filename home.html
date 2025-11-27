@@ -26,7 +26,7 @@
 
       <div class="navbar-nav">
         <a href="home.html" class="nav-link active">Inicio</a>
-        <a href="#" class="nav-link">Biblioteca <span class="badge badge-coming-soon" style="margin-left: 4px;">Pronto</span></a>
+        <a href="library.html" class="nav-link">Biblioteca</a>
       </div>
 
       <div class="navbar-actions">
@@ -74,7 +74,7 @@
   <!-- Mobile Navigation -->
   <div class="mobile-nav" aria-hidden="true">
     <a href="home.html" class="nav-link active">Inicio</a>
-    <a href="#" class="nav-link">Biblioteca <span class="badge badge-coming-soon">Pronto</span></a>
+    <a href="library.html" class="nav-link">Biblioteca</a>
     <div class="theme-toggle-wrapper">
       <span>Tema</span>
       <button class="theme-toggle" aria-label="Cambiar tema">
@@ -106,30 +106,13 @@
           <div class="dashboard-section" data-animate="fade-up">
             <div class="section-title">
               <h3>📖 Continuar leyendo</h3>
-              <a href="#" class="btn btn-ghost btn-sm">Ver todo</a>
+              <a href="library.html" class="btn btn-ghost btn-sm">Ver todo</a>
             </div>
 
-            <div class="continue-card hover-lift">
-              <div class="continue-image">📘</div>
-              <div class="continue-info">
-                <span class="resource-type">PDF</span>
-                <h5>Fundamentos de Programación</h5>
-                <p class="progress-text">Página 45 de 245 • 18% completado</p>
-                <div class="progress-bar">
-                  <div class="progress-fill" style="width: 18%;"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="continue-card hover-lift" style="margin-top: var(--space-md);">
-              <div class="continue-image">📗</div>
-              <div class="continue-info">
-                <span class="resource-type">Libro</span>
-                <h5>Estructuras de Datos en Java</h5>
-                <p class="progress-text">Página 120 de 380 • 32% completado</p>
-                <div class="progress-bar">
-                  <div class="progress-fill" style="width: 32%;"></div>
-                </div>
+            <div id="continueReadingContainer">
+              <div class="empty-state-small">
+                <p>Aún no has comenzado ningún recurso</p>
+                <a href="library.html" class="btn btn-primary btn-sm">Explorar biblioteca</a>
               </div>
             </div>
           </div>
@@ -138,48 +121,11 @@
           <div class="dashboard-section" data-animate="fade-up" data-delay="100">
             <div class="section-title">
               <h3>⭐ Recursos destacados</h3>
-              <a href="#" class="btn btn-ghost btn-sm">Ver más</a>
+              <a href="library.html" class="btn btn-ghost btn-sm">Ver más</a>
             </div>
 
-            <div class="resources-grid">
-              <div class="card resource-card hover-lift">
-                <div class="resource-image">📕</div>
-                <div class="resource-content">
-                  <span class="resource-type">Nuevo</span>
-                  <h5>Algoritmos y Complejidad</h5>
-                  <p>Análisis de algoritmos y notación Big O.</p>
-                  <div class="resource-meta">
-                    <span>📄 180 págs</span>
-                    <span>⭐ 4.9</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="card resource-card hover-lift">
-                <div class="resource-image">📙</div>
-                <div class="resource-content">
-                  <span class="resource-type">Popular</span>
-                  <h5>Desarrollo Web Moderno</h5>
-                  <p>HTML, CSS, JavaScript y frameworks.</p>
-                  <div class="resource-meta">
-                    <span>📄 320 págs</span>
-                    <span>⭐ 4.8</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="card resource-card hover-lift">
-                <div class="resource-image">📓</div>
-                <div class="resource-content">
-                  <span class="resource-type">Guía</span>
-                  <h5>Git y Control de Versiones</h5>
-                  <p>Domina Git desde cero hasta avanzado.</p>
-                  <div class="resource-meta">
-                    <span>📄 95 págs</span>
-                    <span>⭐ 4.7</span>
-                  </div>
-                </div>
-              </div>
+            <div class="resources-grid" id="featuredResourcesGrid">
+              <div class="loading-placeholder">Cargando recursos...</div>
             </div>
           </div>
 
@@ -189,57 +135,30 @@
               <h3>🔍 Explorar biblioteca</h3>
             </div>
 
-            <div class="card" style="padding: var(--space-2xl); text-align: center; background: var(--gradient-hero);">
-              <div style="font-size: 4rem; margin-bottom: var(--space-md);">📚</div>
-              <h4>Biblioteca completa</h4>
-              <p style="max-width: 400px; margin: var(--space-sm) auto var(--space-lg);">
-                Accede a nuestra colección completa de recursos organizados por categoría.
-              </p>
-              <button class="btn btn-primary" disabled>
-                Próximamente
-                <span class="badge badge-coming-soon" style="margin-left: 8px;">En desarrollo</span>
-              </button>
+            <div class="explore-library-card">
+              <div class="explore-icon">📚</div>
+              <div class="explore-content">
+                <h4>Biblioteca completa</h4>
+                <p>Accede a nuestra colección de recursos organizados por categoría, tipo y más.</p>
+                <a href="library.html" class="btn btn-primary">
+                  Explorar ahora
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </a>
+              </div>
             </div>
           </div>
 
           <!-- Categories -->
           <div class="dashboard-section" data-animate="fade-up" data-delay="300">
             <div class="section-title">
-              <h3>📂 Categorías populares</h3>
-              <a href="#" class="btn btn-ghost btn-sm">Ver todas</a>
+              <h3>📂 Categorías</h3>
+              <a href="library.html" class="btn btn-ghost btn-sm">Ver todas</a>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-md);">
-              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
-                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">💻</div>
-                <h6>Programación</h6>
-                <small style="color: var(--text-muted);">45 recursos</small>
-              </div>
-              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
-                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🗄️</div>
-                <h6>Bases de Datos</h6>
-                <small style="color: var(--text-muted);">32 recursos</small>
-              </div>
-              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
-                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🌐</div>
-                <h6>Redes</h6>
-                <small style="color: var(--text-muted);">28 recursos</small>
-              </div>
-              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
-                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">🔒</div>
-                <h6>Seguridad</h6>
-                <small style="color: var(--text-muted);">21 recursos</small>
-              </div>
-              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
-                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">📊</div>
-                <h6>Data Science</h6>
-                <small style="color: var(--text-muted);">38 recursos</small>
-              </div>
-              <div class="card hover-lift" style="padding: var(--space-lg); text-align: center; cursor: pointer;">
-                <div style="font-size: 2rem; margin-bottom: var(--space-sm);">☁️</div>
-                <h6>Cloud</h6>
-                <small style="color: var(--text-muted);">19 recursos</small>
-              </div>
+            <div class="categories-grid" id="categoriesGrid">
+              <!-- Categories loaded dynamically -->
             </div>
           </div>
         </div>
@@ -249,54 +168,36 @@
           <!-- Quick Stats -->
           <div class="dashboard-section" data-animate="fade-left">
             <h4 style="margin-bottom: var(--space-lg);">📊 Tu progreso</h4>
-            <div class="quick-stats">
+            <div class="quick-stats" id="userStats">
               <div class="stat-card">
                 <div class="stat-icon">📚</div>
-                <div class="stat-value">12</div>
-                <div class="stat-label">Recursos leídos</div>
+                <div class="stat-value" id="statResourcesRead">0</div>
+                <div class="stat-label">En progreso</div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">⏱️</div>
-                <div class="stat-value">24h</div>
-                <div class="stat-label">Tiempo de lectura</div>
+                <div class="stat-icon">✅</div>
+                <div class="stat-value" id="statCompleted">0</div>
+                <div class="stat-label">Completados</div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">🔥</div>
-                <div class="stat-value">7</div>
-                <div class="stat-label">Días seguidos</div>
-              </div>
-              <div class="stat-card">
-                <div class="stat-icon">⭐</div>
-                <div class="stat-value">5</div>
+                <div class="stat-icon">❤️</div>
+                <div class="stat-value" id="statFavorites">0</div>
                 <div class="stat-label">Favoritos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">📖</div>
+                <div class="stat-value" id="statTotalResources">0</div>
+                <div class="stat-label">Recursos totales</div>
               </div>
             </div>
           </div>
 
-          <!-- Recent Activity -->
+          <!-- Favorites Section -->
           <div class="dashboard-section" data-animate="fade-left" data-delay="100">
-            <h4 style="margin-bottom: var(--space-lg);">🕐 Actividad reciente</h4>
-            <div class="card" style="padding: 0;">
-              <div style="padding: var(--space-md); border-bottom: 1px solid var(--border-color); display: flex; gap: var(--space-sm); align-items: center;">
-                <span style="font-size: 1.2rem;">📖</span>
-                <div style="flex: 1; min-width: 0;">
-                  <p style="margin: 0; font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Abriste "Fundamentos de Programación"</p>
-                  <small style="color: var(--text-muted);">Hace 2 horas</small>
-                </div>
-              </div>
-              <div style="padding: var(--space-md); border-bottom: 1px solid var(--border-color); display: flex; gap: var(--space-sm); align-items: center;">
-                <span style="font-size: 1.2rem;">⭐</span>
-                <div style="flex: 1; min-width: 0;">
-                  <p style="margin: 0; font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Agregaste a favoritos "Git Avanzado"</p>
-                  <small style="color: var(--text-muted);">Ayer</small>
-                </div>
-              </div>
-              <div style="padding: var(--space-md); display: flex; gap: var(--space-sm); align-items: center;">
-                <span style="font-size: 1.2rem;">✅</span>
-                <div style="flex: 1; min-width: 0;">
-                  <p style="margin: 0; font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Completaste "Intro a SQL"</p>
-                  <small style="color: var(--text-muted);">Hace 3 días</small>
-                </div>
+            <h4 style="margin-bottom: var(--space-lg);">❤️ Tus favoritos</h4>
+            <div id="userFavoritesContainer">
+              <div class="empty-state-small">
+                <p>Aún no tienes favoritos</p>
               </div>
             </div>
           </div>
@@ -339,6 +240,9 @@
     </div>
   </footer>
 
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script src="js/dashboard.js"></script>
 </body>

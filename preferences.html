@@ -26,9 +26,7 @@
 
       <div class="navbar-nav">
         <a href="home.html" class="nav-link">Inicio</a>
-        <a href="#" class="nav-link">Biblioteca <span class="badge badge-coming-soon" style="margin-left: 4px;">Pronto</span></a>
-        <a href="#" class="nav-link">Favoritos</a>
-        <a href="#" class="nav-link">Categorías</a>
+        <a href="library.html" class="nav-link">Biblioteca</a>
       </div>
 
       <div class="navbar-actions">
@@ -76,9 +74,7 @@
   <!-- Mobile Navigation -->
   <div class="mobile-nav" aria-hidden="true">
     <a href="home.html" class="nav-link">Inicio</a>
-    <a href="#" class="nav-link">Biblioteca <span class="badge badge-coming-soon">Pronto</span></a>
-    <a href="#" class="nav-link">Favoritos</a>
-    <a href="#" class="nav-link">Categorías</a>
+    <a href="library.html" class="nav-link">Biblioteca</a>
     <div class="theme-toggle-wrapper">
       <span>Tema</span>
       <button class="theme-toggle" aria-label="Cambiar tema">
@@ -179,7 +175,7 @@
                     placeholder="Tu contraseña actual"
                   >
                   <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
-                    <span class="eye-icon">👁️</span>
+                    <span class="eye-icon"></span>
                   </button>
                 </div>
                 <div id="currentPasswordError" class="form-error" role="alert"></div>
@@ -197,7 +193,7 @@
                     minlength="6"
                   >
                   <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
-                    <span class="eye-icon">👁️</span>
+                    <span class="eye-icon"></span>
                   </button>
                 </div>
                 <div class="password-strength" id="newPasswordStrength">
@@ -220,7 +216,7 @@
                     placeholder="Repite la nueva contraseña"
                   >
                   <button type="button" class="password-toggle" aria-label="Mostrar contraseña">
-                    <span class="eye-icon">👁️</span>
+                    <span class="eye-icon"></span>
                   </button>
                 </div>
                 <div id="confirmNewPasswordError" class="form-error" role="alert"></div>
@@ -364,6 +360,9 @@
     <span>✅</span> Cambios guardados correctamente
   </div>
 
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
   <script src="js/main.js"></script>
   <script src="js/preferences.js"></script>
 </body>

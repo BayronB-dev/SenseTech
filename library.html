@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Biblioteca de recursos de SenseTech - Explora nuestra colección de materiales de Ingeniería de Sistemas">
+  <title>Biblioteca - SenseTech</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/library.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="home.html" class="navbar-brand">
+        <img src="icon.png" alt="SenseTech" class="navbar-logo">
+        <span>SenseTech</span>
+      </a>
+
+      <div class="navbar-nav">
+        <a href="home.html" class="nav-link">Inicio</a>
+        <a href="library.html" class="nav-link active">Biblioteca</a>
+      </div>
+
+      <div class="navbar-actions">
+        <button class="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </button>
+
+        <div class="user-menu">
+          <button class="user-menu-trigger" aria-expanded="false" aria-haspopup="true">
+            <div class="avatar" id="userAvatar">U</div>
+          </button>
+          <div class="user-menu-dropdown" role="menu">
+            <div class="user-menu-header">
+              <div class="user-name" id="userName">Usuario</div>
+              <div class="user-email" id="userEmail">usuario@email.com</div>
+            </div>
+            <a href="preferences.html" class="user-menu-item">
+              <span>👤</span> Mi Perfil
+            </a>
+            <a href="preferences.html#accessibility" class="user-menu-item">
+              <span>♿</span> Accesibilidad
+            </a>
+            <div class="user-menu-divider"></div>
+            <button class="user-menu-item danger" id="logoutBtn">
+              <span>🚪</span> Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button class="mobile-menu-toggle" aria-label="Menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation -->
+  <div class="mobile-nav" aria-hidden="true">
+    <a href="home.html" class="nav-link">Inicio</a>
+    <a href="library.html" class="nav-link active">Biblioteca</a>
+    <div class="theme-toggle-wrapper">
+      <span>Tema</span>
+      <button class="theme-toggle" aria-label="Cambiar tema">
+        <span class="sun-icon">☀️</span>
+        <span class="moon-icon">🌙</span>
+        <div class="theme-toggle-thumb"></div>
+      </button>
+    </div>
+    <div class="navbar-actions">
+      <a href="preferences.html" class="btn btn-secondary">Mi Perfil</a>
+      <button class="btn btn-ghost" id="mobileLogoutBtn">Cerrar Sesión</button>
+    </div>
+  </div>
+
+  <main id="main-content" class="library-page">
+    <div class="container">
+      <!-- Library Header -->
+      <div class="library-header" data-animate="fade-down">
+        <div class="library-title">
+          <h1>📚 Biblioteca</h1>
+          <p>Explora nuestra colección de recursos para Ingeniería de Sistemas</p>
+        </div>
+        <div class="library-stats">
+          <div class="stat">
+            <span class="stat-number" id="totalResources">0</span>
+            <span class="stat-label">Recursos</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number" id="totalCategories">0</span>
+            <span class="stat-label">Categorías</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search and Filters Bar -->
+      <div class="library-controls" data-animate="fade-up">
+        <div class="search-box">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input 
+            type="text" 
+            id="searchInput" 
+            class="search-input" 
+            placeholder="Buscar por título, autor o tema..."
+            aria-label="Buscar recursos"
+          >
+          <button class="search-clear" id="clearSearch" aria-label="Limpiar búsqueda" style="display: none;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="filter-controls">
+          <!-- Category Filter -->
+          <div class="filter-dropdown">
+            <button class="filter-btn" id="categoryBtn" aria-expanded="false">
+              <span>📂</span>
+              <span id="categoryLabel">Categoría</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </button>
+            <div class="filter-menu" id="categoryMenu">
+              <button class="filter-option active" data-value="">Todas</button>
+              <button class="filter-option" data-value="programming">Programación</button>
+              <button class="filter-option" data-value="databases">Bases de Datos</button>
+              <button class="filter-option" data-value="networks">Redes</button>
+              <button class="filter-option" data-value="software-engineering">Ingeniería de Software</button>
+              <button class="filter-option" data-value="ai-ml">IA & Machine Learning</button>
+              <button class="filter-option" data-value="security">Seguridad</button>
+              <button class="filter-option" data-value="devops">DevOps</button>
+              <button class="filter-option" data-value="other">Otros</button>
+            </div>
+          </div>
+
+          <!-- Type Filter -->
+          <div class="filter-dropdown">
+            <button class="filter-btn" id="typeBtn" aria-expanded="false">
+              <span>📄</span>
+              <span id="typeLabel">Tipo</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </button>
+            <div class="filter-menu" id="typeMenu">
+              <button class="filter-option active" data-value="">Todos</button>
+              <button class="filter-option" data-value="book">📕 Libro</button>
+              <button class="filter-option" data-value="pdf">📄 PDF</button>
+              <button class="filter-option" data-value="video">🎬 Video</button>
+              <button class="filter-option" data-value="article">📰 Artículo</button>
+              <button class="filter-option" data-value="documentation">📋 Documentación</button>
+            </div>
+          </div>
+
+          <!-- Sort -->
+          <div class="filter-dropdown">
+            <button class="filter-btn" id="sortBtn" aria-expanded="false">
+              <span>↕️</span>
+              <span id="sortLabel">Ordenar</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="m6 9 6 6 6-6"/>
+              </svg>
+            </button>
+            <div class="filter-menu" id="sortMenu">
+              <button class="filter-option active" data-value="newest">Más recientes</button>
+              <button class="filter-option" data-value="oldest">Más antiguos</button>
+              <button class="filter-option" data-value="title-asc">Título A-Z</button>
+              <button class="filter-option" data-value="title-desc">Título Z-A</button>
+              <button class="filter-option" data-value="popular">Más populares</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- View Toggle -->
+        <div class="view-toggle">
+          <button class="view-btn active" data-view="grid" aria-label="Vista de cuadrícula">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+            </svg>
+          </button>
+          <button class="view-btn" data-view="list" aria-label="Vista de lista">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Active Filters -->
+      <div class="active-filters" id="activeFilters" style="display: none;" data-animate="fade-up">
+        <span class="filters-label">Filtros activos:</span>
+        <div class="filter-tags" id="filterTags"></div>
+        <button class="clear-all-filters" id="clearAllFilters">Limpiar todo</button>
+      </div>
+
+      <!-- Results Info -->
+      <div class="results-info" data-animate="fade-up">
+        <span id="resultsCount">Cargando recursos...</span>
+      </div>
+
+      <!-- Resources Grid -->
+      <div class="resources-grid" id="resourcesGrid" data-animate="fade-up">
+        <!-- Resources will be loaded here -->
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="empty-icon">🔍</div>
+        <h3>No se encontraron recursos</h3>
+        <p>Intenta ajustar los filtros o buscar con otros términos</p>
+        <button class="btn btn-primary" id="resetFiltersBtn">Limpiar filtros</button>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-state" id="loadingState">
+        <div class="loading-spinner"></div>
+        <p>Cargando recursos...</p>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination" id="pagination" style="display: none;" data-animate="fade-up">
+        <button class="pagination-btn" id="prevPage" disabled>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m15 18-6-6 6-6"/>
+          </svg>
+          Anterior
+        </button>
+        <div class="pagination-info">
+          Página <span id="currentPage">1</span> de <span id="totalPages">1</span>
+        </div>
+        <button class="pagination-btn" id="nextPage">
+          Siguiente
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="border: none; padding-top: 0;">
+        <p>&copy; 2024 SenseTech. Todos los derechos reservados.</p>
+        <p>Hecho con ❤️ para la comunidad</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/library.js"></script>
+</body>
+</html>

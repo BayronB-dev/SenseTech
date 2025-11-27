@@ -1,21 +1,24 @@
 /**
  * SenseTech - Preferences JavaScript
- * User profile and accessibility settings management
+ * User profile and accessibility settings with Supabase integration
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  // Check authentication
-  if (!requireAuth()) return;
+let currentUser = null;
+let currentProfile = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Check authentication with Supabase
+  const authenticated = await requireAuthSupabase();
+  if (!authenticated) return;
   
-  // Update user display
-  updateUserDisplay();
+  // Load user data from Supabase
+  await loadUserDataFromDB();
   
   // Initialize preferences
   initPreferencesNav();
   initPersonalInfoForm();
   initAccessibilityForm();
   initPhotoUpload();
-  loadUserData();
   
   // Check for hash navigation
   handleHashNavigation();
@@ -63,32 +66,94 @@ function handleHashNavigation() {
 }
 
 // ========================================
-// LOAD USER DATA
+// LOAD USER DATA FROM DATABASE
 // ========================================
 
-function loadUserData() {
-  const user = getCurrentUser();
+async function loadUserDataFromDB() {
+  const { user, profile } = await getCurrentUserWithProfile();
   
-  if (!user) return;
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
   
+  currentUser = user;
+  currentProfile = profile;
+  
+  // Update UI
+  updatePreferencesUI();
+  
+  // Show admin button if user is admin
+  if (profile?.role === 'admin') {
+    showAdminButton();
+  }
+}
+
+function showAdminButton() {
+  const navbarNav = document.querySelector('.navbar-nav');
+  if (navbarNav && !document.getElementById('adminNavLink')) {
+    const adminLink = document.createElement('a');
+    adminLink.id = 'adminNavLink';
+    adminLink.href = 'admin.html';
+    adminLink.className = 'nav-link admin-link';
+    adminLink.innerHTML = '⚙️ Panel de Control';
+    navbarNav.appendChild(adminLink);
+  }
+  
+  const userMenuDropdown = document.querySelector('.user-menu-dropdown');
+  if (userMenuDropdown && !document.getElementById('adminMenuLink')) {
+    const divider = userMenuDropdown.querySelector('.user-menu-divider');
+    if (divider) {
+      const adminMenuItem = document.createElement('a');
+      adminMenuItem.id = 'adminMenuLink';
+      adminMenuItem.href = 'admin.html';
+      adminMenuItem.className = 'user-menu-item admin-menu-item';
+      adminMenuItem.innerHTML = '<span>⚙️</span> Panel de Control';
+      divider.parentNode.insertBefore(adminMenuItem, divider);
+    }
+  }
+}
+
+function updatePreferencesUI() {
   // Personal info
   const editName = document.getElementById('editName');
   const editEmail = document.getElementById('editEmail');
   const profileAvatar = document.getElementById('profileAvatar');
   
-  if (editName) editName.value = user.name || '';
-  if (editEmail) editEmail.value = user.email || '';
+  if (editName) editName.value = currentProfile?.name || '';
+  if (editEmail) editEmail.value = currentUser?.email || '';
   
   if (profileAvatar) {
-    if (user.photo) {
-      profileAvatar.innerHTML = `<img src="${user.photo}" alt="${user.name}">`;
+    if (currentProfile?.photo_url) {
+      profileAvatar.innerHTML = `<img src="${currentProfile.photo_url}" alt="${currentProfile.name}">`;
     } else {
-      profileAvatar.textContent = user.name ? user.name.charAt(0).toUpperCase() : 'U';
+      profileAvatar.textContent = currentProfile?.name ? currentProfile.name.charAt(0).toUpperCase() : 'U';
     }
   }
   
+  // Update navbar avatar
+  const userAvatar = document.querySelector('.user-menu-trigger .avatar');
+  const userName = document.querySelector('.user-menu-header h5');
+  const userEmail = document.querySelector('.user-menu-header p');
+  
+  if (userAvatar && currentProfile) {
+    if (currentProfile.photo_url) {
+      userAvatar.innerHTML = `<img src="${currentProfile.photo_url}" alt="${currentProfile.name}">`;
+    } else {
+      userAvatar.textContent = currentProfile.name ? currentProfile.name.charAt(0).toUpperCase() : 'U';
+    }
+  }
+  
+  if (userName && currentProfile) {
+    userName.textContent = currentProfile.name || 'Usuario';
+  }
+  
+  if (userEmail && currentUser) {
+    userEmail.textContent = currentUser.email;
+  }
+  
   // Accessibility settings
-  const settings = user.accessibility || getAccessibilitySettings();
+  const settings = currentProfile?.accessibility_settings || getAccessibilitySettings();
   
   // Text size
   const textSizeBtns = document.querySelectorAll('.text-size-btn');
@@ -130,25 +195,27 @@ function initPersonalInfoForm() {
   // Cancel button
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => {
-      loadUserData();
+      updatePreferencesUI();
       clearFormErrors(form);
     });
   }
   
   // Form submit
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     clearFormErrors(form);
     
-    const user = getCurrentUser();
-    if (!user) return;
+    if (!currentUser || !currentProfile) return;
     
     const newName = form.fullName.value.trim();
     const newEmail = form.email.value.trim();
     const currentPassword = form.currentPassword.value;
     const newPassword = form.newPassword.value;
     const confirmNewPassword = form.confirmNewPassword.value;
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
     
     let isValid = true;
     
@@ -168,22 +235,12 @@ function initPersonalInfoForm() {
     } else if (!validateEmail(newEmail)) {
       showFormError('editEmail', 'Ingresa un correo válido');
       isValid = false;
-    } else if (newEmail !== user.email) {
-      // Check if email is already taken
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      if (users.some(u => u.email === newEmail && u.id !== user.id)) {
-        showFormError('editEmail', 'Este correo ya está en uso');
-        isValid = false;
-      }
     }
     
     // Validate password change (if attempting)
     if (newPassword || confirmNewPassword || currentPassword) {
       if (!currentPassword) {
         showFormError('currentPassword', 'Ingresa tu contraseña actual');
-        isValid = false;
-      } else if (currentPassword !== user.password) {
-        showFormError('currentPassword', 'Contraseña incorrecta');
         isValid = false;
       }
       
@@ -203,36 +260,78 @@ function initPersonalInfoForm() {
     
     if (!isValid) return;
     
-    // Update user
-    user.name = newName;
-    user.email = newEmail;
+    // Show loading
+    submitBtn.innerHTML = '<span class="loading-spinner" style="width: 20px; height: 20px;"></span> Guardando...';
+    submitBtn.disabled = true;
     
-    if (newPassword) {
-      user.password = newPassword;
-    }
-    
-    // Save
-    setCurrentUser(user);
-    updateUserInStorage(user);
-    updateUserDisplay();
-    
-    // Clear password fields
-    form.currentPassword.value = '';
-    form.newPassword.value = '';
-    form.confirmNewPassword.value = '';
-    
-    // Reset password strength
-    if (strengthContainer) {
-      const fill = strengthContainer.querySelector('.strength-fill');
-      const text = strengthContainer.querySelector('.strength-text');
-      if (fill) {
-        fill.className = 'strength-fill';
-        fill.style.width = '0';
+    try {
+      // Update profile name in database
+      if (newName !== currentProfile.name) {
+        const { error: profileError } = await updateUserProfile(currentUser.id, { name: newName });
+        if (profileError) throw profileError;
+        currentProfile.name = newName;
       }
-      if (text) text.textContent = '';
+      
+      // Update email if changed (Supabase Auth)
+      if (newEmail !== currentUser.email) {
+        const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
+        if (emailError) {
+          if (emailError.message.includes('already registered')) {
+            showFormError('editEmail', 'Este correo ya está en uso');
+          } else {
+            showFormError('editEmail', emailError.message);
+          }
+          throw emailError;
+        }
+      }
+      
+      // Update password if provided
+      if (newPassword && currentPassword) {
+        // First verify current password by re-authenticating
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: currentUser.email,
+          password: currentPassword
+        });
+        
+        if (signInError) {
+          showFormError('currentPassword', 'Contraseña actual incorrecta');
+          throw signInError;
+        }
+        
+        // Update to new password
+        const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+        if (passwordError) {
+          showFormError('newPassword', passwordError.message);
+          throw passwordError;
+        }
+      }
+      
+      // Clear password fields
+      form.currentPassword.value = '';
+      form.newPassword.value = '';
+      form.confirmNewPassword.value = '';
+      
+      // Reset password strength
+      if (strengthContainer) {
+        const fill = strengthContainer.querySelector('.strength-fill');
+        const text = strengthContainer.querySelector('.strength-text');
+        if (fill) {
+          fill.className = 'strength-fill';
+          fill.style.width = '0';
+        }
+        if (text) text.textContent = '';
+      }
+      
+      // Update UI
+      updatePreferencesUI();
+      
+      showToast('Información actualizada correctamente');
+    } catch (error) {
+      console.error('Update error:', error);
+    } finally {
+      submitBtn.innerHTML = originalBtnText;
+      submitBtn.disabled = false;
     }
-    
-    showToast('Información actualizada correctamente');
   });
 }
 
@@ -296,11 +395,13 @@ function initAccessibilityForm() {
   }
   
   // Form submit
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const user = getCurrentUser();
-    if (!user) return;
+    if (!currentUser) return;
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
     
     // Get current selections
     const activeTextSize = document.querySelector('.text-size-btn.active');
@@ -312,15 +413,25 @@ function initAccessibilityForm() {
       screenReader: false
     };
     
-    // Save to user
-    user.accessibility = settings;
-    setCurrentUser(user);
-    updateUserInStorage(user);
+    // Show loading
+    submitBtn.innerHTML = '<span class="loading-spinner" style="width: 20px; height: 20px;"></span> Guardando...';
+    submitBtn.disabled = true;
     
-    // Save to accessibility settings
-    saveAccessibilitySettings(settings);
+    // Save to database
+    const { error } = await updateAccessibilityInDB(currentUser.id, settings);
     
-    showToast('Preferencias de accesibilidad guardadas');
+    if (error) {
+      showToast('Error al guardar preferencias', 'error');
+      console.error('Accessibility update error:', error);
+    } else {
+      // Save locally
+      saveAccessibilitySettings(settings);
+      currentProfile.accessibility_settings = settings;
+      showToast('Preferencias de accesibilidad guardadas');
+    }
+    
+    submitBtn.innerHTML = originalBtnText;
+    submitBtn.disabled = false;
   });
 }
 
@@ -334,7 +445,7 @@ function initPhotoUpload() {
   const profileAvatar = document.getElementById('profileAvatar');
   
   if (photoInput) {
-    photoInput.addEventListener('change', (e) => {
+    photoInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       
       if (!file) return;
@@ -351,70 +462,62 @@ function initPhotoUpload() {
         return;
       }
       
-      // Read and display
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const photoData = event.target.result;
-        
-        // Update avatar
-        if (profileAvatar) {
-          profileAvatar.innerHTML = `<img src="${photoData}" alt="Foto de perfil">`;
-        }
-        
-        // Save to user
-        const user = getCurrentUser();
-        if (user) {
-          user.photo = photoData;
-          setCurrentUser(user);
-          updateUserInStorage(user);
-          updateUserDisplay();
-        }
-        
-        showToast('Foto actualizada correctamente');
-      };
+      if (!currentUser) return;
       
-      reader.readAsDataURL(file);
+      // Show loading state on avatar
+      if (profileAvatar) {
+        profileAvatar.innerHTML = '<span class="loading-spinner"></span>';
+      }
+      
+      // Upload to Supabase Storage
+      const { url, error } = await uploadProfilePhoto(currentUser.id, file);
+      
+      if (error) {
+        showToast('Error al subir la imagen', 'error');
+        console.error('Upload error:', error);
+        updatePreferencesUI();
+        return;
+      }
+      
+      // Update avatar with new URL
+      if (profileAvatar && url) {
+        profileAvatar.innerHTML = `<img src="${url}" alt="Foto de perfil">`;
+        currentProfile.photo_url = url;
+      }
+      
+      updatePreferencesUI();
+      showToast('Foto actualizada correctamente');
     });
   }
   
   if (removePhotoBtn) {
-    removePhotoBtn.addEventListener('click', () => {
-      const user = getCurrentUser();
+    removePhotoBtn.addEventListener('click', async () => {
+      if (!currentUser || !currentProfile) return;
       
-      if (user) {
-        user.photo = null;
-        setCurrentUser(user);
-        updateUserInStorage(user);
-        
-        // Update avatar
-        if (profileAvatar) {
-          profileAvatar.innerHTML = '';
-          profileAvatar.textContent = user.name ? user.name.charAt(0).toUpperCase() : 'U';
-        }
-        
-        updateUserDisplay();
-        showToast('Foto eliminada');
+      // Update profile to remove photo
+      const { error } = await updateUserProfile(currentUser.id, { photo_url: null });
+      
+      if (error) {
+        showToast('Error al eliminar la foto', 'error');
+        return;
       }
+      
+      currentProfile.photo_url = null;
+      
+      // Update avatar
+      if (profileAvatar) {
+        profileAvatar.innerHTML = '';
+        profileAvatar.textContent = currentProfile.name ? currentProfile.name.charAt(0).toUpperCase() : 'U';
+      }
+      
+      updatePreferencesUI();
+      showToast('Foto eliminada');
       
       // Clear input
       if (photoInput) {
         photoInput.value = '';
       }
     });
-  }
-}
-
-// ========================================
-// HELPER FUNCTIONS
-// ========================================
-
-function updateUserInStorage(updatedUser) {
-  const users = JSON.parse(localStorage.getItem('users') || '[]');
-  const index = users.findIndex(u => u.id === updatedUser.id);
-  
-  if (index !== -1) {
-    users[index] = updatedUser;
-    localStorage.setItem('users', JSON.stringify(users));
   }
 }
 

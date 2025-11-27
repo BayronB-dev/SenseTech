@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Panel de Administración - SenseTech">
+  <title>Admin - SenseTech</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/pages.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- Admin Sidebar -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-header">
+      <a href="home.html" class="sidebar-brand">
+        <img src="icon.png" alt="SenseTech">
+        <span>SenseTech</span>
+      </a>
+      <span class="admin-badge">Admin</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#dashboard" class="sidebar-link active" data-section="dashboard">
+        <span class="icon">📊</span>
+        Dashboard
+      </a>
+      <a href="#resources" class="sidebar-link" data-section="resources">
+        <span class="icon">📚</span>
+        Recursos
+      </a>
+      <a href="#users" class="sidebar-link" data-section="users">
+        <span class="icon">👥</span>
+        Usuarios
+      </a>
+      <a href="#categories" class="sidebar-link" data-section="categories">
+        <span class="icon">📂</span>
+        Categorías
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="home.html" class="sidebar-link">
+        <span class="icon">🏠</span>
+        Volver al sitio
+      </a>
+      <button class="sidebar-link" id="adminLogoutBtn">
+        <span class="icon">🚪</span>
+        Cerrar sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main id="main-content" class="admin-main">
+    <!-- Top Bar -->
+    <header class="admin-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <h1 class="page-title" id="pageTitle">Dashboard</h1>
+
+      <div class="topbar-actions">
+        <button class="theme-toggle" aria-label="Cambiar tema">
+          <span class="sun-icon">☀️</span>
+          <span class="moon-icon">🌙</span>
+          <div class="theme-toggle-thumb"></div>
+        </button>
+
+        <div class="admin-user">
+          <div class="avatar" id="adminAvatar">A</div>
+          <span id="adminName">Admin</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Dashboard Section -->
+    <section class="admin-section active" id="section-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">📚</div>
+          <div class="stat-info">
+            <span class="stat-value" id="statResources">0</span>
+            <span class="stat-label">Recursos totales</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-info">
+            <span class="stat-value" id="statUsers">0</span>
+            <span class="stat-label">Usuarios registrados</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👁️</div>
+          <div class="stat-info">
+            <span class="stat-value" id="statViews">0</span>
+            <span class="stat-label">Vistas totales</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">❤️</div>
+          <div class="stat-info">
+            <span class="stat-value" id="statFavorites">0</span>
+            <span class="stat-label">Favoritos totales</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-card">
+          <h3>📈 Recursos recientes</h3>
+          <div class="recent-list" id="recentResources">
+            <p class="empty-text">Cargando...</p>
+          </div>
+        </div>
+
+        <div class="admin-card">
+          <h3>👤 Usuarios recientes</h3>
+          <div class="recent-list" id="recentUsers">
+            <p class="empty-text">Cargando...</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Resources Section -->
+    <section class="admin-section" id="section-resources">
+      <div class="section-header">
+        <h2>📚 Gestión de Recursos</h2>
+        <button class="btn btn-primary" id="addResourceBtn">
+          <span>➕</span> Nuevo Recurso
+        </button>
+      </div>
+
+      <div class="admin-card">
+        <div class="table-controls">
+          <div class="search-box">
+            <input type="text" id="resourceSearch" placeholder="Buscar recursos..." class="form-input">
+          </div>
+          <select id="resourceFilter" class="form-input">
+            <option value="">Todas las categorías</option>
+            <option value="programming">Programación</option>
+            <option value="databases">Bases de Datos</option>
+            <option value="networks">Redes</option>
+            <option value="software-engineering">Ingeniería de Software</option>
+            <option value="ai-ml">IA & Machine Learning</option>
+            <option value="security">Seguridad</option>
+            <option value="devops">DevOps</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="admin-table" id="resourcesTable">
+            <thead>
+              <tr>
+                <th>Título</th>
+                <th>Tipo</th>
+                <th>Categoría</th>
+                <th>Vistas</th>
+                <th>Favoritos</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="resourcesTableBody">
+              <tr>
+                <td colspan="6" class="empty-text">Cargando recursos...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Users Section -->
+    <section class="admin-section" id="section-users">
+      <div class="section-header">
+        <h2>👥 Gestión de Usuarios</h2>
+      </div>
+
+      <div class="admin-card">
+        <div class="table-controls">
+          <div class="search-box">
+            <input type="text" id="userSearch" placeholder="Buscar usuarios..." class="form-input">
+          </div>
+          <select id="userRoleFilter" class="form-input">
+            <option value="">Todos los roles</option>
+            <option value="user">Usuario</option>
+            <option value="admin">Administrador</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="admin-table" id="usersTable">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Registro</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <tr>
+                <td colspan="5" class="empty-text">Cargando usuarios...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories Section -->
+    <section class="admin-section" id="section-categories">
+      <div class="section-header">
+        <h2>📂 Categorías</h2>
+      </div>
+
+      <div class="categories-grid" id="categoriesGrid">
+        <!-- Categories will be loaded here -->
+      </div>
+    </section>
+  </main>
+
+  <!-- Resource Modal -->
+  <div class="modal-overlay" id="resourceModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Nuevo Recurso</h3>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <form id="resourceForm" class="modal-body">
+        <input type="hidden" id="resourceId">
+        
+        <div class="form-group">
+          <label for="resourceTitleInput" class="form-label">Título *</label>
+          <input type="text" id="resourceTitleInput" class="form-input" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="resourceType" class="form-label">Tipo *</label>
+            <select id="resourceTypeInput" class="form-input" required>
+              <option value="">Seleccionar...</option>
+              <option value="book">📕 Libro</option>
+              <option value="pdf">📄 PDF</option>
+              <option value="video">🎬 Video</option>
+              <option value="article">📰 Artículo</option>
+              <option value="documentation">📋 Documentación</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="resourceCategoryInput" class="form-label">Categoría *</label>
+            <select id="resourceCategoryInput" class="form-input" required>
+              <option value="">Seleccionar...</option>
+              <option value="programming">Programación</option>
+              <option value="databases">Bases de Datos</option>
+              <option value="networks">Redes</option>
+              <option value="software-engineering">Ingeniería de Software</option>
+              <option value="ai-ml">IA & Machine Learning</option>
+              <option value="security">Seguridad</option>
+              <option value="devops">DevOps</option>
+              <option value="other">Otros</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="resourceAuthorInput" class="form-label">Autor</label>
+          <input type="text" id="resourceAuthorInput" class="form-input">
+        </div>
+
+        <div class="form-group">
+          <label for="resourceDescriptionInput" class="form-label">Descripción</label>
+          <textarea id="resourceDescriptionInput" class="form-input" rows="4"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Portada</label>
+          <div class="file-upload-area" id="coverUploadArea">
+            <div class="file-upload-content" id="coverUploadContent">
+              <span class="file-upload-icon">🖼️</span>
+              <p>Arrastra una imagen aquí o <span class="file-upload-link">selecciona un archivo</span></p>
+              <small>PNG, JPG o WebP (máx. 2MB)</small>
+            </div>
+            <div class="file-upload-preview" id="coverPreview" style="display: none;">
+              <img id="coverPreviewImg" src="" alt="Preview">
+              <button type="button" class="file-remove-btn" id="removeCover">&times;</button>
+            </div>
+            <input type="file" id="resourceCoverFile" accept="image/*" hidden>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Archivo del recurso</label>
+          <div class="file-upload-area" id="fileUploadArea">
+            <div class="file-upload-content" id="fileUploadContent">
+              <span class="file-upload-icon">📁</span>
+              <p>Arrastra un archivo aquí o <span class="file-upload-link">selecciona un archivo</span></p>
+              <small>PDF, EPUB, DOC, etc. (máx. 50MB)</small>
+            </div>
+            <div class="file-upload-info" id="fileInfo" style="display: none;">
+              <span class="file-info-icon">📄</span>
+              <span class="file-info-name" id="fileName"></span>
+              <span class="file-info-size" id="fileSize"></span>
+              <button type="button" class="file-remove-btn" id="removeFile">&times;</button>
+            </div>
+            <input type="file" id="resourceFileInput" accept=".pdf,.epub,.doc,.docx,.txt,.mp4,.webm" hidden>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelResourceBtn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="saveResourceBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3>Confirmar eliminación</h3>
+        <button class="modal-close" id="closeDeleteModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>¿Estás seguro de que deseas eliminar este elemento? Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelDeleteBtn">Cancelar</button>
+        <button class="btn btn-danger" id="confirmDeleteBtn">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,539 @@
+/**
+ * SenseTech - Resource Detail Page
+ * Handles resource display, favorites, and progress tracking
+ */
+
+// State
+let currentUser = null;
+let currentResource = null;
+let userProgress = null;
+
+// Config
+const categoryLabels = {
+  'programming': 'Programación',
+  'databases': 'Bases de Datos',
+  'networks': 'Redes',
+  'software-engineering': 'Ingeniería de Software',
+  'ai-ml': 'IA & Machine Learning',
+  'security': 'Seguridad',
+  'devops': 'DevOps',
+  'other': 'Otros'
+};
+
+const typeConfig = {
+  'book': { label: 'Libro', icon: '📕' },
+  'pdf': { label: 'PDF', icon: '📄' },
+  'video': { label: 'Video', icon: '🎬' },
+  'article': { label: 'Artículo', icon: '📰' },
+  'documentation': { label: 'Documentación', icon: '📋' }
+};
+
+// ========================================
+// INITIALIZATION
+// ========================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await initResourcePage();
+});
+
+async function initResourcePage() {
+  // Check authentication
+  const { user, profile } = await getCurrentUserWithProfile();
+  
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+  
+  currentUser = user;
+  updateUserDisplay(profile);
+  
+  // Get resource ID from URL (try hash first, then query string)
+  let resourceId = window.location.hash.slice(1); // Remove the # symbol
+  
+  if (!resourceId) {
+    const urlParams = new URLSearchParams(window.location.search);
+    resourceId = urlParams.get('id');
+  }
+  
+  if (!resourceId) {
+    console.error('No resource ID in URL');
+    showError();
+    return;
+  }
+  
+  // Load resource
+  await loadResource(resourceId);
+}
+
+function updateUserDisplay(profile) {
+  const name = profile?.name || 'Usuario';
+  const email = currentUser?.email || 'usuario@email.com';
+  const initial = name.charAt(0).toUpperCase();
+  const photoUrl = profile?.photo_url;
+  const isAdmin = profile?.role === 'admin';
+  
+  const avatarEl = document.getElementById('userAvatar');
+  const nameEl = document.getElementById('userName');
+  const emailEl = document.getElementById('userEmail');
+  
+  if (avatarEl) {
+    if (photoUrl) {
+      avatarEl.innerHTML = `<img src="${photoUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+    } else {
+      avatarEl.textContent = initial;
+    }
+  }
+  
+  if (nameEl) nameEl.textContent = name;
+  if (emailEl) emailEl.textContent = email;
+  
+  if (isAdmin) {
+    showAdminButton();
+  }
+}
+
+function showAdminButton() {
+  const navbarNav = document.querySelector('.navbar-nav');
+  if (navbarNav && !document.getElementById('adminNavLink')) {
+    const adminLink = document.createElement('a');
+    adminLink.id = 'adminNavLink';
+    adminLink.href = 'admin.html';
+    adminLink.className = 'nav-link admin-link';
+    adminLink.innerHTML = '⚙️ Panel de Control';
+    navbarNav.appendChild(adminLink);
+  }
+}
+
+// ========================================
+// LOAD RESOURCE
+// ========================================
+
+async function loadResource(resourceId) {
+  try {
+    // Fetch resource
+    const { data: resource, error } = await supabase
+      .from('resources')
+      .select('*')
+      .eq('id', resourceId)
+      .single();
+    
+    if (error || !resource) {
+      console.error('Resource not found:', error);
+      showError();
+      return;
+    }
+    
+    currentResource = resource;
+    
+    // Update page title
+    document.title = `${resource.title} - SenseTech`;
+    
+    // Increment view count
+    await incrementViewCount(resourceId);
+    
+    // Load user progress
+    await loadUserProgress(resourceId);
+    
+    // Render resource
+    renderResource();
+    
+    // Load related resources
+    await loadRelatedResources();
+    
+    // Show content
+    showContent();
+    
+    // Init actions
+    initActions();
+    
+  } catch (error) {
+    console.error('Error loading resource:', error);
+    showError();
+  }
+}
+
+async function incrementViewCount(resourceId) {
+  try {
+    // Try RPC first
+    const { error: rpcError } = await supabase.rpc('increment_view_count', { rid: resourceId });
+    
+    if (rpcError) {
+      // Fallback: update directly
+      console.log('RPC not available, using direct update');
+      const currentCount = parseInt(currentResource.view_count) || 0;
+      await supabase
+        .from('resources')
+        .update({ view_count: currentCount + 1 })
+        .eq('id', resourceId);
+    }
+  } catch (error) {
+    console.log('View count update failed:', error);
+  }
+}
+
+async function loadUserProgress(resourceId) {
+  try {
+    const { data } = await supabase
+      .from('user_progress')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .eq('resource_id', resourceId)
+      .single();
+    
+    userProgress = data;
+  } catch (error) {
+    userProgress = null;
+  }
+}
+
+// ========================================
+// RENDER
+// ========================================
+
+function renderResource() {
+  const resource = currentResource;
+  const typeInfo = typeConfig[resource.type] || { label: 'Recurso', icon: '📁' };
+  const categoryLabel = categoryLabels[resource.category] || resource.category || 'General';
+  
+  // Cover
+  const coverEl = document.getElementById('resourceCover');
+  if (coverEl) {
+    if (resource.cover_url) {
+      coverEl.innerHTML = `<img src="${resource.cover_url}" alt="${resource.title}">`;
+    } else {
+      coverEl.innerHTML = `<span class="resource-icon">${typeInfo.icon}</span>`;
+    }
+  }
+  
+  // Badges
+  document.getElementById('resourceType').textContent = typeInfo.label;
+  document.getElementById('resourceCategory').textContent = categoryLabel;
+  
+  // Title & Author
+  document.getElementById('resourceTitle').textContent = resource.title || 'Sin título';
+  document.getElementById('resourceAuthor').textContent = resource.author ? `Por ${resource.author}` : '';
+  
+  // Stats
+  document.getElementById('viewCount').textContent = (resource.view_count || 0) + 1; // +1 for current view
+  document.getElementById('favoriteCount').textContent = resource.favorite_count || 0;
+  document.getElementById('dateAdded').textContent = formatDate(resource.created_at);
+  
+  // Description
+  const descEl = document.getElementById('resourceDescription');
+  if (descEl) {
+    descEl.innerHTML = resource.description 
+      ? `<p>${resource.description}</p>` 
+      : '<p>No hay descripción disponible para este recurso.</p>';
+  }
+  
+  // Details
+  document.getElementById('detailType').textContent = typeInfo.label;
+  document.getElementById('detailCategory').textContent = categoryLabel;
+  document.getElementById('detailAuthor').textContent = resource.author || 'Desconocido';
+  document.getElementById('detailDate').textContent = formatDate(resource.created_at);
+  
+  // Progress
+  renderProgress();
+  
+  // Favorite button
+  updateFavoriteButton();
+}
+
+function renderProgress() {
+  const progressPercentage = userProgress?.progress || userProgress?.progress_percentage || 0;
+  const lastAccessed = userProgress?.last_read || userProgress?.last_accessed_at;
+  
+  document.getElementById('progressPercentage').textContent = `${progressPercentage}%`;
+  document.getElementById('progressBar').style.width = `${progressPercentage}%`;
+  
+  let progressText = 'Aún no has comenzado este recurso';
+  if (progressPercentage === 100) {
+    progressText = '¡Completado! 🎉';
+  } else if (progressPercentage > 0) {
+    progressText = `Último acceso: ${formatDate(lastAccessed)}`;
+  }
+  document.getElementById('progressText').textContent = progressText;
+  
+  // Update button text
+  const startBtn = document.getElementById('startReadingBtn');
+  if (startBtn) {
+    if (progressPercentage === 100) {
+      startBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 4v6h6M23 20v-6h-6"/>
+          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+        </svg>
+        Volver a leer
+      `;
+    } else if (progressPercentage > 0) {
+      startBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        Continuar leyendo
+      `;
+    }
+  }
+}
+
+function updateFavoriteButton() {
+  const btn = document.getElementById('favoriteBtn');
+  const icon = document.getElementById('favoriteIcon');
+  const text = document.getElementById('favoriteText');
+  
+  const isFavorite = userProgress?.is_favorite || false;
+  
+  if (isFavorite) {
+    btn.classList.add('active');
+    icon.textContent = '❤️';
+    text.textContent = 'En favoritos';
+  } else {
+    btn.classList.remove('active');
+    icon.textContent = '🤍';
+    text.textContent = 'Agregar a favoritos';
+  }
+}
+
+async function loadRelatedResources() {
+  const container = document.getElementById('relatedResources');
+  if (!container) return;
+  
+  try {
+    // Get resources from same category
+    const { data: related } = await supabase
+      .from('resources')
+      .select('id, title, author, type, cover_url')
+      .eq('category', currentResource.category)
+      .neq('id', currentResource.id)
+      .limit(4);
+    
+    if (!related || related.length === 0) {
+      container.innerHTML = '<p class="no-related">No hay recursos relacionados disponibles.</p>';
+      return;
+    }
+    
+    container.innerHTML = related.map(resource => {
+      const typeInfo = typeConfig[resource.type] || { icon: '📁' };
+      return `
+        <a href="resource.html#${resource.id}" class="related-card">
+          <div class="related-card-image">
+            ${resource.cover_url 
+              ? `<img src="${resource.cover_url}" alt="${resource.title}">`
+              : `<span class="icon">${typeInfo.icon}</span>`
+            }
+          </div>
+          <div class="related-card-info">
+            <div class="related-card-title">${resource.title}</div>
+            <div class="related-card-author">${resource.author || 'Autor desconocido'}</div>
+          </div>
+        </a>
+      `;
+    }).join('');
+    
+  } catch (error) {
+    console.error('Error loading related resources:', error);
+    container.innerHTML = '<p class="no-related">Error al cargar recursos relacionados.</p>';
+  }
+}
+
+// ========================================
+// ACTIONS
+// ========================================
+
+function initActions() {
+  // Favorite button
+  document.getElementById('favoriteBtn')?.addEventListener('click', toggleFavorite);
+  
+  // Start reading button
+  document.getElementById('startReadingBtn')?.addEventListener('click', startReading);
+}
+
+async function toggleFavorite() {
+  if (!currentUser || !currentResource) return;
+  
+  const btn = document.getElementById('favoriteBtn');
+  const isFavorite = btn.classList.contains('active');
+  const resourceId = String(currentResource.id);
+  
+  try {
+    // Check if progress record exists
+    const { data: existing } = await supabase
+      .from('user_progress')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .eq('resource_id', resourceId)
+      .single();
+    
+    if (isFavorite) {
+      // Remove from favorites
+      if (existing) {
+        await supabase
+          .from('user_progress')
+          .update({ is_favorite: false })
+          .eq('id', existing.id);
+      }
+      
+      if (userProgress) userProgress.is_favorite = false;
+      
+      // Update favorite count
+      const { data: resource } = await supabase
+        .from('resources')
+        .select('favorite_count')
+        .eq('id', resourceId)
+        .single();
+      
+      const newCount = Math.max(0, (resource?.favorite_count || 1) - 1);
+      await supabase
+        .from('resources')
+        .update({ favorite_count: newCount })
+        .eq('id', resourceId);
+      
+      currentResource.favorite_count = newCount;
+      document.getElementById('favoriteCount').textContent = newCount;
+      
+    } else {
+      // Add to favorites
+      if (existing) {
+        await supabase
+          .from('user_progress')
+          .update({ is_favorite: true })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('user_progress')
+          .insert({
+            user_id: currentUser.id,
+            resource_id: resourceId,
+            is_favorite: true,
+            progress: 0
+          });
+      }
+      
+      if (userProgress) {
+        userProgress.is_favorite = true;
+      } else {
+        userProgress = { is_favorite: true, progress: 0 };
+      }
+      
+      // Update favorite count
+      const { data: resource } = await supabase
+        .from('resources')
+        .select('favorite_count')
+        .eq('id', resourceId)
+        .single();
+      
+      const newCount = (resource?.favorite_count || 0) + 1;
+      await supabase
+        .from('resources')
+        .update({ favorite_count: newCount })
+        .eq('id', resourceId);
+      
+      currentResource.favorite_count = newCount;
+      document.getElementById('favoriteCount').textContent = newCount;
+    }
+    
+    updateFavoriteButton();
+    
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+  }
+}
+
+function startReading() {
+  // For now, show a message. In the future, this will open the reader
+  const resourceUrl = currentResource.file_url || currentResource.external_url;
+  
+  if (resourceUrl) {
+    window.open(resourceUrl, '_blank');
+    updateProgress(10); // Mark as started
+  } else {
+    showToast('El lector de documentos estará disponible próximamente', 'info');
+    // Simulate starting to read
+    if (!userProgress || userProgress.progress_percentage === 0) {
+      updateProgress(10);
+    }
+  }
+}
+
+async function updateProgress(percentage) {
+  if (!currentUser || !currentResource) return;
+  
+  try {
+    await supabase
+      .from('user_progress')
+      .upsert({
+        user_id: currentUser.id,
+        resource_id: currentResource.id,
+        progress_percentage: percentage,
+        last_accessed_at: new Date().toISOString()
+      });
+    
+    userProgress = {
+      ...userProgress,
+      progress_percentage: percentage,
+      last_accessed_at: new Date().toISOString()
+    };
+    
+    renderProgress();
+    
+  } catch (error) {
+    console.error('Error updating progress:', error);
+  }
+}
+
+// ========================================
+// UI HELPERS
+// ========================================
+
+function showContent() {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('errorState').style.display = 'none';
+  document.getElementById('resourceContent').style.display = 'block';
+}
+
+function showError() {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('errorState').style.display = 'block';
+  document.getElementById('resourceContent').style.display = 'none';
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '--';
+  
+  const date = new Date(dateString);
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return date.toLocaleDateString('es-ES', options);
+}
+
+function showToast(message, type = 'info') {
+  // Use existing toast if available
+  if (typeof window.showToast === 'function') {
+    window.showToast(message, type);
+    return;
+  }
+  
+  // Fallback toast
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    padding: 16px 24px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    z-index: 9999;
+    animation: slideUp 0.3s ease;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
