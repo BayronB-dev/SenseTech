@@ -526,19 +526,38 @@ async function toggleFavorite() {
 }
 
 function startReading() {
-  // For now, show a message. In the future, this will open the reader
-  const resourceUrl = currentResource.file_url || currentResource.external_url;
+  if (!currentResource) return;
   
-  if (resourceUrl) {
-    window.open(resourceUrl, '_blank');
-    updateProgress(10); // Mark as started
-  } else {
-    showToast('El lector de documentos estará disponible próximamente', 'info');
-    // Simulate starting to read
-    if (!userProgress || userProgress.progress_percentage === 0) {
-      updateProgress(10);
-    }
+  const type = currentResource.type?.toLowerCase();
+  const hasFile = currentResource.file_url;
+  const hasExternal = currentResource.external_url;
+  
+  // Open internal reader for PDFs, books, and documents
+  if (hasFile && (type === 'pdf' || type === 'book' || type === 'documentation')) {
+    window.location.href = `reader.html#${currentResource.id}`;
+    return;
   }
+  
+  // Open internal reader for videos with file
+  if (hasFile && type === 'video') {
+    window.location.href = `reader.html#${currentResource.id}`;
+    return;
+  }
+  
+  // External links open in new tab
+  if (hasExternal) {
+    window.open(hasExternal, '_blank');
+    updateProgress(10);
+    return;
+  }
+  
+  // Fallback: open file directly if available
+  if (hasFile) {
+    window.location.href = `reader.html#${currentResource.id}`;
+    return;
+  }
+  
+  showToast('Este recurso no tiene contenido disponible', 'error');
 }
 
 async function updateProgress(percentage) {
