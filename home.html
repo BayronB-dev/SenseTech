@@ -98,11 +98,18 @@
 
   <main id="main-content" class="dashboard">
     <div class="container">
-      <!-- Welcome Header -->
+      <!-- Welcome Header with Streak -->
       <div class="dashboard-header" data-animate="fade-down">
         <div class="welcome-message">
           <h1>Hola, <span class="gradient-text" id="welcomeName">Usuario</span> 👋</h1>
           <p>Continúa tu viaje de aprendizaje. Aquí tienes tus recursos.</p>
+        </div>
+        <div class="streak-badge" id="streakBadge" style="display: none;">
+          <div class="streak-flame">🔥</div>
+          <div class="streak-info">
+            <span class="streak-count" id="streakCount">0</span>
+            <span class="streak-label">días seguidos</span>
+          </div>
         </div>
       </div>
 
@@ -117,64 +124,145 @@
             </div>
 
             <div id="continueReadingContainer">
-              <div class="empty-state-small">
-                <p>Aún no has comenzado ningún recurso</p>
-                <a href="library.html" class="btn btn-primary btn-sm">Explorar biblioteca</a>
+              <!-- Skeleton loader -->
+              <div class="skeleton-continue-reading">
+                <div class="skeleton-card">
+                  <div class="skeleton skeleton-image"></div>
+                  <div class="skeleton-content">
+                    <div class="skeleton skeleton-text-sm"></div>
+                    <div class="skeleton skeleton-text-lg"></div>
+                    <div class="skeleton skeleton-progress"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommendations Section -->
+          <div class="dashboard-section" data-animate="fade-up" data-delay="50">
+            <div class="section-title">
+              <h3>✨ Recomendado para ti</h3>
+              <span class="section-badge">Basado en tu historial</span>
+            </div>
+
+            <div class="recommendations-grid" id="recommendationsGrid">
+              <!-- Skeleton loader -->
+              <div class="skeleton-card">
+                <div class="skeleton skeleton-image-tall"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton skeleton-text-sm"></div>
+                  <div class="skeleton skeleton-text-lg"></div>
+                </div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton skeleton-image-tall"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton skeleton-text-sm"></div>
+                  <div class="skeleton skeleton-text-lg"></div>
+                </div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton skeleton-image-tall"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton skeleton-text-sm"></div>
+                  <div class="skeleton skeleton-text-lg"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weekly Progress Chart -->
+          <div class="dashboard-section" data-animate="fade-up" data-delay="100">
+            <div class="section-title">
+              <h3>📊 Tu actividad semanal</h3>
+              <div class="chart-period-toggle">
+                <button class="period-btn active" data-period="week">Semana</button>
+                <button class="period-btn" data-period="month">Mes</button>
+              </div>
+            </div>
+
+            <div class="activity-chart-container">
+              <div class="activity-chart" id="activityChart">
+                <!-- Chart rendered by JS -->
+              </div>
+              <div class="activity-summary" id="activitySummary">
+                <div class="summary-item">
+                  <span class="summary-value" id="totalReadingTime">0h</span>
+                  <span class="summary-label">Tiempo de lectura</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-value" id="resourcesThisWeek">0</span>
+                  <span class="summary-label">Recursos esta semana</span>
+                </div>
+                <div class="summary-item">
+                  <span class="summary-value" id="pagesRead">0</span>
+                  <span class="summary-label">Páginas leídas</span>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Featured Resources -->
-          <div class="dashboard-section" data-animate="fade-up" data-delay="100">
+          <div class="dashboard-section" data-animate="fade-up" data-delay="150">
             <div class="section-title">
-              <h3>⭐ Recursos destacados</h3>
+              <h3>⭐ Populares en la comunidad</h3>
               <a href="library.html" class="btn btn-ghost btn-sm">Ver más</a>
             </div>
 
             <div class="resources-grid" id="featuredResourcesGrid">
-              <div class="loading-placeholder">Cargando recursos...</div>
-            </div>
-          </div>
-
-          <!-- Explore Library -->
-          <div class="dashboard-section" data-animate="fade-up" data-delay="200">
-            <div class="section-title">
-              <h3>🔍 Explorar biblioteca</h3>
-            </div>
-
-            <div class="explore-library-card">
-              <div class="explore-icon">📚</div>
-              <div class="explore-content">
-                <h4>Biblioteca completa</h4>
-                <p>Accede a nuestra colección de recursos organizados por categoría, tipo y más.</p>
-                <a href="library.html" class="btn btn-primary">
-                  Explorar ahora
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
-                  </svg>
-                </a>
+              <!-- Skeleton loader -->
+              <div class="skeleton-card">
+                <div class="skeleton skeleton-image-tall"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton skeleton-text-sm"></div>
+                  <div class="skeleton skeleton-text-lg"></div>
+                  <div class="skeleton skeleton-text-md"></div>
+                </div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton skeleton-image-tall"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton skeleton-text-sm"></div>
+                  <div class="skeleton skeleton-text-lg"></div>
+                  <div class="skeleton skeleton-text-md"></div>
+                </div>
+              </div>
+              <div class="skeleton-card">
+                <div class="skeleton skeleton-image-tall"></div>
+                <div class="skeleton-content">
+                  <div class="skeleton skeleton-text-sm"></div>
+                  <div class="skeleton skeleton-text-lg"></div>
+                  <div class="skeleton skeleton-text-md"></div>
+                </div>
               </div>
             </div>
           </div>
 
           <!-- Categories -->
-          <div class="dashboard-section" data-animate="fade-up" data-delay="300">
+          <div class="dashboard-section" data-animate="fade-up" data-delay="200">
             <div class="section-title">
-              <h3>📂 Categorías</h3>
+              <h3>📂 Explorar por categoría</h3>
               <a href="library.html" class="btn btn-ghost btn-sm">Ver todas</a>
             </div>
 
             <div class="categories-grid" id="categoriesGrid">
-              <!-- Categories loaded dynamically -->
+              <!-- Skeleton loader -->
+              <div class="skeleton-category"></div>
+              <div class="skeleton-category"></div>
+              <div class="skeleton-category"></div>
+              <div class="skeleton-category"></div>
             </div>
           </div>
         </div>
 
         <!-- Sidebar -->
         <div class="dashboard-sidebar">
-          <!-- Quick Stats -->
-          <div class="dashboard-section" data-animate="fade-left">
-            <h4 style="margin-bottom: var(--space-lg);">📊 Tu progreso</h4>
+          <!-- Quick Stats Card -->
+          <div class="dashboard-section stats-card-section" data-animate="fade-left">
+            <div class="stats-header">
+              <h4>📊 Tu progreso</h4>
+              <a href="preferences.html#stats" class="stats-link">Ver detalles</a>
+            </div>
             <div class="quick-stats" id="userStats">
               <div class="stat-card">
                 <div class="stat-icon">📚</div>
@@ -192,42 +280,83 @@
                 <div class="stat-label">Favoritos</div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">📖</div>
-                <div class="stat-value" id="statTotalResources">0</div>
-                <div class="stat-label">Recursos totales</div>
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-value" id="statReadingTime">0h</div>
+                <div class="stat-label">Tiempo total</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reading Goal -->
+          <div class="dashboard-section" data-animate="fade-left" data-delay="50">
+            <div class="reading-goal-card">
+              <div class="goal-header">
+                <h4>🎯 Meta semanal</h4>
+                <button class="btn-icon" id="editGoalBtn" title="Editar meta">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="goal-progress">
+                <div class="goal-circle" id="goalCircle">
+                  <svg viewBox="0 0 36 36">
+                    <path class="goal-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    <path class="goal-fill" id="goalFill" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                  </svg>
+                  <div class="goal-text">
+                    <span class="goal-current" id="goalCurrent">0</span>
+                    <span class="goal-divider">/</span>
+                    <span class="goal-target" id="goalTarget">5</span>
+                  </div>
+                </div>
+                <p class="goal-label">recursos esta semana</p>
               </div>
             </div>
           </div>
 
           <!-- Favorites Section -->
           <div class="dashboard-section" data-animate="fade-left" data-delay="100">
-            <h4 style="margin-bottom: var(--space-lg);">❤️ Tus favoritos</h4>
+            <h4>❤️ Tus favoritos</h4>
             <div id="userFavoritesContainer">
-              <div class="empty-state-small">
-                <p>Aún no tienes favoritos</p>
+              <div class="skeleton-favorites">
+                <div class="skeleton skeleton-favorite-item"></div>
+                <div class="skeleton skeleton-favorite-item"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Related Resources -->
+          <div class="dashboard-section" data-animate="fade-left" data-delay="150">
+            <h4>🔗 Recursos relacionados</h4>
+            <div id="relatedResourcesContainer">
+              <div class="skeleton-favorites">
+                <div class="skeleton skeleton-favorite-item"></div>
+                <div class="skeleton skeleton-favorite-item"></div>
               </div>
             </div>
           </div>
 
           <!-- Accessibility Quick Settings -->
           <div class="dashboard-section" data-animate="fade-left" data-delay="200">
-            <h4 style="margin-bottom: var(--space-lg);">♿ Accesibilidad rápida</h4>
-            <div class="card" style="padding: var(--space-lg);">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
-                <span style="font-size: var(--text-sm);">Alto contraste</span>
-                <label class="toggle-switch" style="transform: scale(0.8);">
+            <h4>♿ Accesibilidad rápida</h4>
+            <div class="accessibility-quick-card">
+              <div class="accessibility-toggle-row">
+                <span>Alto contraste</span>
+                <label class="toggle-switch small">
                   <input type="checkbox" id="quickHighContrast">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-md);">
-                <span style="font-size: var(--text-sm);">Cursor grande</span>
-                <label class="toggle-switch" style="transform: scale(0.8);">
+              <div class="accessibility-toggle-row">
+                <span>Cursor grande</span>
+                <label class="toggle-switch small">
                   <input type="checkbox" id="quickLargeCursor">
                   <span class="toggle-slider"></span>
                 </label>
               </div>
-              <a href="preferences.html#accessibility" class="btn btn-ghost btn-sm" style="width: 100%; margin-top: var(--space-sm);">
+              <a href="preferences.html#accessibility" class="btn btn-ghost btn-sm full-width">
                 Más opciones
               </a>
             </div>

@@ -789,14 +789,24 @@ function renderBookmarksList() {
   empty.style.display = 'none';
   list.innerHTML = bookmarks.map(b => `
     <li class="bookmark-item" data-page="${b.page_number}">
-      <span class="bookmark-icon">🔖</span>
+      <div class="bookmark-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
       <div class="bookmark-content" onclick="goToPage(${b.page_number})">
         <div class="bookmark-title">${escapeHtml(b.title)}</div>
         ${b.note ? `<div class="bookmark-note">${escapeHtml(b.note)}</div>` : ''}
-        <div class="bookmark-page">Página ${b.page_number}</div>
+        <div class="bookmark-page">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          Página ${b.page_number}
+        </div>
       </div>
-      <button class="bookmark-delete" onclick="deleteBookmark(${b.id})" title="Eliminar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="bookmark-delete" onclick="event.stopPropagation(); deleteBookmark(${b.id})" title="Eliminar">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
         </svg>
       </button>
@@ -1132,13 +1142,9 @@ function setupTTSListeners() {
       btn.classList.add('active');
       ttsState.rate = parseFloat(btn.dataset.speed);
       
-      // If currently playing, restart with new speed
-      if (ttsState.isPlaying) {
-        const wasPlaying = !ttsState.isPaused;
-        stopTTS();
-        if (wasPlaying) {
-          setTimeout(() => speakCurrentParagraph(), 100);
-        }
+      // If currently playing, restart current paragraph with new speed
+      if (ttsState.isPlaying && !ttsState.isPaused) {
+        restartCurrentParagraph();
       }
     });
   });
@@ -1148,15 +1154,18 @@ function setupTTSListeners() {
     const voiceName = e.target.value;
     ttsState.selectedVoice = ttsState.voices.find(v => v.name === voiceName);
     
-    // If currently playing, restart with new voice
-    if (ttsState.isPlaying) {
-      const wasPlaying = !ttsState.isPaused;
-      stopTTS();
-      if (wasPlaying) {
-        setTimeout(() => speakCurrentParagraph(), 100);
-      }
+    // If currently playing, restart current paragraph with new voice
+    if (ttsState.isPlaying && !ttsState.isPaused) {
+      restartCurrentParagraph();
     }
   });
+}
+
+// Restart current paragraph without resetting position
+function restartCurrentParagraph() {
+  speechSynthesis.cancel();
+  // Don't reset paragraph index, just restart speaking
+  setTimeout(() => speakCurrentParagraph(), 100);
 }
 
 function toggleTTSPanel() {
@@ -1318,6 +1327,10 @@ function cleanText(text) {
   
   // Final cleanup
   return cleaned
+    // Remove bullet point symbols that TTS reads literally
+    .replace(/[•●○◦▪▫■□▸▹►▻◆◇★☆→⇒➤➢✓✔✗✘☐☑☒]/g, '')
+    // Remove other common list markers
+    .replace(/^[\-–—]\s*/gm, '')
     // Fix multiple spaces
     .replace(/\s+/g, ' ')
     // Fix spaces before punctuation
@@ -1343,29 +1356,8 @@ function toggleTTSPlayback() {
   }
 }
 
-// Workaround for Chrome bug where pause/resume doesn't work properly
-// We need to keep the speech synthesis active
-let ttsKeepAliveInterval = null;
-
-function startTTSKeepAlive() {
-  // Chrome has a bug where speech synthesis stops after ~15 seconds of pause
-  // This workaround keeps it alive
-  if (ttsKeepAliveInterval) clearInterval(ttsKeepAliveInterval);
-  ttsKeepAliveInterval = setInterval(() => {
-    if (speechSynthesis.paused) {
-      speechSynthesis.pause();
-      speechSynthesis.resume();
-      speechSynthesis.pause();
-    }
-  }, 5000);
-}
-
-function stopTTSKeepAlive() {
-  if (ttsKeepAliveInterval) {
-    clearInterval(ttsKeepAliveInterval);
-    ttsKeepAliveInterval = null;
-  }
-}
+// Note: We don't use pause/resume anymore due to browser bugs
+// Instead, we cancel and restart from the current paragraph
 
 function startTTS() {
   if (ttsState.paragraphs.length === 0) {
@@ -1447,30 +1439,23 @@ function speakCurrentParagraph() {
 }
 
 function pauseTTS() {
-  if (speechSynthesis.speaking && !speechSynthesis.paused) {
+  if (speechSynthesis.speaking) {
     speechSynthesis.pause();
     ttsState.isPaused = true;
-    startTTSKeepAlive();
+    ttsState.isPlaying = true; // Keep playing state
     updateTTSUI(false);
   }
 }
 
 function resumeTTS() {
-  stopTTSKeepAlive();
-  
-  if (speechSynthesis.paused) {
-    speechSynthesis.resume();
-    ttsState.isPaused = false;
-    updateTTSUI(true);
-  } else if (ttsState.isPaused) {
-    // If pause state is out of sync, restart from current paragraph
+  if (ttsState.isPaused) {
+    // Always restart from current paragraph - more reliable than resume()
     ttsState.isPaused = false;
     speakCurrentParagraph();
   }
 }
 
 function stopTTS() {
-  stopTTSKeepAlive();
   speechSynthesis.cancel();
   ttsState.isPlaying = false;
   ttsState.isPaused = false;

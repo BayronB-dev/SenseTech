@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initAccessibilitySettings();
   initUserMenu();
   initRippleEffect();
+  initPageTransitions();
+  initTour();
 });
 
 // ========================================
@@ -417,4 +419,350 @@ document.querySelectorAll('#logoutBtn, #mobileLogoutBtn').forEach(btn => {
 // Update display on load
 if (document.querySelector('#userAvatar')) {
   updateUserDisplay();
+}
+
+// ========================================
+// PAGE TRANSITIONS
+// ========================================
+
+function initPageTransitions() {
+  // Create transition overlay if not exists
+  if (!document.querySelector('.page-transition-overlay')) {
+    const overlay = document.createElement('div');
+    overlay.className = 'page-transition-overlay';
+    overlay.innerHTML = `
+      <div class="page-loader">
+        <div class="page-loader-spinner"></div>
+        <span class="page-loader-text">Cargando...</span>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+  
+  // Add transition to internal links
+  document.querySelectorAll('a[href]').forEach(link => {
+    const href = link.getAttribute('href');
+    
+    // Skip external links, anchors, and javascript
+    if (!href || 
+        href.startsWith('http') || 
+        href.startsWith('#') || 
+        href.startsWith('javascript') ||
+        href.startsWith('mailto') ||
+        link.hasAttribute('download') ||
+        link.target === '_blank') {
+      return;
+    }
+    
+    link.addEventListener('click', (e) => {
+      // Don't transition for same page
+      if (href === window.location.pathname.split('/').pop()) return;
+      
+      e.preventDefault();
+      
+      const overlay = document.querySelector('.page-transition-overlay');
+      if (overlay) {
+        overlay.classList.add('active');
+        
+        setTimeout(() => {
+          window.location.href = href;
+        }, 300);
+      } else {
+        window.location.href = href;
+      }
+    });
+  });
+  
+  // Hide overlay on page load
+  window.addEventListener('load', () => {
+    const overlay = document.querySelector('.page-transition-overlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+    }
+    
+    // Fade in page content
+    document.body.style.opacity = '0';
+    requestAnimationFrame(() => {
+      document.body.style.transition = 'opacity 0.3s ease';
+      document.body.style.opacity = '1';
+    });
+  });
+}
+
+// ========================================
+// GUIDED TOUR FOR NEW USERS
+// ========================================
+
+const tourSteps = {
+  'home.html': [
+    {
+      target: '.welcome-message',
+      title: '¡Bienvenido a SenseTech!',
+      content: 'Este es tu panel principal donde puedes ver tu progreso y acceder a tus recursos.',
+      position: 'bottom'
+    },
+    {
+      target: '#continueReadingContainer',
+      title: 'Continúa donde lo dejaste',
+      content: 'Aquí verás los recursos que has comenzado a leer para retomar fácilmente.',
+      position: 'bottom'
+    },
+    {
+      target: '.quick-stats',
+      title: 'Tu progreso',
+      content: 'Visualiza tus estadísticas: recursos en progreso, completados y favoritos.',
+      position: 'left'
+    },
+    {
+      target: '.reading-goal-card',
+      title: 'Meta semanal',
+      content: 'Establece una meta de lectura semanal y sigue tu progreso.',
+      position: 'left'
+    },
+    {
+      target: '.navbar-nav',
+      title: 'Navegación',
+      content: 'Usa el menú para ir a la biblioteca y explorar todos los recursos disponibles.',
+      position: 'bottom'
+    }
+  ],
+  'library.html': [
+    {
+      target: '.search-input',
+      title: 'Buscar recursos',
+      content: 'Usa la barra de búsqueda para encontrar recursos por título o descripción.',
+      position: 'bottom'
+    },
+    {
+      target: '.filter-section',
+      title: 'Filtros',
+      content: 'Filtra por categoría, tipo de recurso y más para encontrar exactamente lo que necesitas.',
+      position: 'right'
+    }
+  ],
+  'reader.html': [
+    {
+      target: '.tts-btn',
+      title: 'Lectura por voz',
+      content: 'Activa el lector de voz para escuchar el contenido del documento.',
+      position: 'bottom'
+    },
+    {
+      target: '#bookmarkBtn',
+      title: 'Marcadores',
+      content: 'Guarda marcadores en las páginas importantes para volver a ellas después.',
+      position: 'bottom'
+    },
+    {
+      target: '.reader-sidebar',
+      title: 'Panel lateral',
+      content: 'Accede al índice, tus marcadores y miniaturas de las páginas.',
+      position: 'right'
+    }
+  ]
+};
+
+function initTour() {
+  // Check if user has seen the tour
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  const tourKey = `tour_seen_${currentPage}`;
+  
+  // Only show tour on authenticated pages and if not seen before
+  if (!localStorage.getItem(tourKey) && tourSteps[currentPage]) {
+    // Wait for page to fully load
+    setTimeout(() => {
+      // Check if user is new (less than 1 day since first visit)
+      const firstVisit = localStorage.getItem('first_visit');
+      if (!firstVisit) {
+        localStorage.setItem('first_visit', Date.now().toString());
+        startTour(currentPage);
+      } else {
+        const daysSinceFirst = (Date.now() - parseInt(firstVisit)) / (1000 * 60 * 60 * 24);
+        if (daysSinceFirst < 1) {
+          startTour(currentPage);
+        }
+      }
+    }, 1000);
+  }
+}
+
+function startTour(page) {
+  const steps = tourSteps[page];
+  if (!steps || steps.length === 0) return;
+  
+  // Create tour overlay
+  const tourOverlay = document.createElement('div');
+  tourOverlay.className = 'tour-overlay';
+  tourOverlay.innerHTML = `
+    <div class="tour-backdrop"></div>
+    <div class="tour-tooltip">
+      <div class="tour-header">
+        <span class="tour-step-indicator">1/${steps.length}</span>
+        <button class="tour-close">&times;</button>
+      </div>
+      <h4 class="tour-title"></h4>
+      <p class="tour-content"></p>
+      <div class="tour-footer">
+        <button class="tour-skip">Omitir tour</button>
+        <div class="tour-nav">
+          <button class="tour-prev" disabled>Anterior</button>
+          <button class="tour-next">Siguiente</button>
+        </div>
+      </div>
+    </div>
+    <div class="tour-highlight"></div>
+  `;
+  document.body.appendChild(tourOverlay);
+  
+  let currentStep = 0;
+  let isAnimating = false;
+  
+  async function showStep(index) {
+    if (isAnimating) return;
+    isAnimating = true;
+    
+    const step = steps[index];
+    const target = document.querySelector(step.target);
+    
+    if (!target) {
+      isAnimating = false;
+      // Skip to next step if target not found
+      if (index < steps.length - 1) {
+        showStep(index + 1);
+      } else {
+        endTour();
+      }
+      return;
+    }
+    
+    // Temporarily enable scroll for smooth scrolling
+    document.body.style.overflow = '';
+    
+    // First scroll to target with smooth animation
+    const targetRect = target.getBoundingClientRect();
+    const targetCenter = targetRect.top + window.scrollY - (window.innerHeight / 2) + (targetRect.height / 2);
+    
+    // Smooth scroll to element
+    window.scrollTo({
+      top: Math.max(0, targetCenter),
+      behavior: 'smooth'
+    });
+    
+    // Wait for scroll to complete
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Block scroll again after scrolling
+    document.body.style.overflow = 'hidden';
+    
+    // Get updated position after scroll
+    const rect = target.getBoundingClientRect();
+    
+    // Update tooltip content
+    tourOverlay.querySelector('.tour-step-indicator').textContent = `${index + 1}/${steps.length}`;
+    tourOverlay.querySelector('.tour-title').textContent = step.title;
+    tourOverlay.querySelector('.tour-content').textContent = step.content;
+    
+    // Position highlight with padding (using fixed positioning)
+    const highlight = tourOverlay.querySelector('.tour-highlight');
+    const padding = 12;
+    highlight.style.top = `${rect.top - padding}px`;
+    highlight.style.left = `${rect.left - padding}px`;
+    highlight.style.width = `${rect.width + padding * 2}px`;
+    highlight.style.height = `${rect.height + padding * 2}px`;
+    
+    // Position tooltip
+    const tooltip = tourOverlay.querySelector('.tour-tooltip');
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    
+    let top, left;
+    const margin = 20;
+    
+    // Calculate best position based on available space
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const spaceRight = viewportWidth - rect.right;
+    const spaceLeft = rect.left;
+    
+    // Determine best position
+    let position = step.position;
+    if (position === 'bottom' && spaceBelow < tooltipRect.height + margin) {
+      position = spaceAbove > spaceBelow ? 'top' : 'bottom';
+    } else if (position === 'top' && spaceAbove < tooltipRect.height + margin) {
+      position = spaceBelow > spaceAbove ? 'bottom' : 'top';
+    } else if (position === 'right' && spaceRight < tooltipRect.width + margin) {
+      position = spaceLeft > spaceRight ? 'left' : 'right';
+    } else if (position === 'left' && spaceLeft < tooltipRect.width + margin) {
+      position = spaceRight > spaceLeft ? 'right' : 'left';
+    }
+    
+    switch (position) {
+      case 'bottom':
+        top = rect.bottom + margin;
+        left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        break;
+      case 'top':
+        top = rect.top - tooltipRect.height - margin;
+        left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+        break;
+      case 'left':
+        top = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
+        left = rect.left - tooltipRect.width - margin;
+        break;
+      case 'right':
+        top = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
+        left = rect.right + margin;
+        break;
+      default:
+        top = rect.bottom + margin;
+        left = rect.left;
+    }
+    
+    // Keep tooltip in viewport with margins
+    left = Math.max(margin, Math.min(left, viewportWidth - tooltipRect.width - margin));
+    top = Math.max(margin, Math.min(top, viewportHeight - tooltipRect.height - margin));
+    
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+    
+    // Update buttons
+    tourOverlay.querySelector('.tour-prev').disabled = index === 0;
+    tourOverlay.querySelector('.tour-next').textContent = index === steps.length - 1 ? 'Finalizar' : 'Siguiente';
+    
+    currentStep = index;
+    isAnimating = false;
+  }
+  
+  function endTour() {
+    // Restore body scroll
+    document.body.style.overflow = '';
+    tourOverlay.remove();
+    localStorage.setItem(`tour_seen_${page}`, 'true');
+  }
+  
+  // Event listeners
+  tourOverlay.querySelector('.tour-close').addEventListener('click', endTour);
+  tourOverlay.querySelector('.tour-skip').addEventListener('click', endTour);
+  tourOverlay.querySelector('.tour-backdrop').addEventListener('click', endTour);
+  
+  tourOverlay.querySelector('.tour-prev').addEventListener('click', () => {
+    if (currentStep > 0 && !isAnimating) showStep(currentStep - 1);
+  });
+  
+  tourOverlay.querySelector('.tour-next').addEventListener('click', () => {
+    if (isAnimating) return;
+    if (currentStep < steps.length - 1) {
+      showStep(currentStep + 1);
+    } else {
+      endTour();
+    }
+  });
+  
+  // Prevent scroll with wheel during tour
+  tourOverlay.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+  
+  // Start tour
+  tourOverlay.classList.add('active');
+  showStep(0);
 }
