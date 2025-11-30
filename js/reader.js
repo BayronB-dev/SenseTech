@@ -106,6 +106,7 @@ async function initReader() {
   initToolbar();
   initSidebar();
   initKeyboardShortcuts();
+  initTTS();
   
   // Load resource data
   await loadResource(resourceId);
@@ -452,6 +453,7 @@ function goToPage(pageNum) {
   
   updateThumbnailSelection();
   updateProgress();
+  onPageChange(); // Update TTS when page changes
 }
 
 function handleScroll() {
@@ -470,6 +472,7 @@ function handleScroll() {
           document.getElementById('currentPageInput').value = i;
           updateThumbnailSelection();
           updateProgress();
+          onPageChange(); // Update TTS when page changes
         }
         break;
       }
@@ -974,6 +977,19 @@ function initKeyboardShortcuts() {
           document.exitFullscreen();
         }
         closeBookmarkModal();
+        closeTTSPanel();
+        break;
+      case 'r':
+        // Toggle TTS panel
+        toggleTTSPanel();
+        e.preventDefault();
+        break;
+      case 'p':
+        // Play/Pause TTS
+        if (document.getElementById('ttsPanel').classList.contains('active')) {
+          toggleTTSPlayback();
+          e.preventDefault();
+        }
         break;
     }
   });
@@ -1018,4 +1034,580 @@ function showToast(message, type = 'success') {
     toast.classList.add('fade-out');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
+}
+
+// ========================================
+// TEXT-TO-SPEECH (TTS)
+// ========================================
+
+// TTS State
+let ttsState = {
+  isSupported: false,
+  isPlaying: false,
+  isPaused: false,
+  currentUtterance: null,
+  voices: [],
+  selectedVoice: null,
+  rate: 1,
+  pageTexts: [], // Array of text content per page
+  currentPageIndex: 0,
+  currentParagraphIndex: 0,
+  paragraphs: [] // Current page paragraphs
+};
+
+function initTTS() {
+  // Check if Web Speech API is supported
+  if (!('speechSynthesis' in window)) {
+    console.warn('TTS not supported in this browser');
+    document.getElementById('ttsBtn').style.display = 'none';
+    return;
+  }
+  
+  ttsState.isSupported = true;
+  
+  // Load voices
+  loadVoices();
+  
+  // Voices may load asynchronously
+  if (speechSynthesis.onvoiceschanged !== undefined) {
+    speechSynthesis.onvoiceschanged = loadVoices;
+  }
+  
+  // Setup event listeners
+  setupTTSListeners();
+}
+
+function loadVoices() {
+  const allVoices = speechSynthesis.getVoices();
+  
+  // Only keep Spanish voices
+  ttsState.voices = allVoices.filter(v => v.lang.startsWith('es'));
+  
+  const voiceSelect = document.getElementById('ttsVoiceSelect');
+  voiceSelect.innerHTML = '';
+  
+  if (ttsState.voices.length > 0) {
+    ttsState.voices.forEach((voice, index) => {
+      const option = document.createElement('option');
+      option.value = voice.name;
+      // Clean up voice name for display
+      const langName = voice.lang.includes('ES') ? 'España' : 
+                       voice.lang.includes('MX') ? 'México' :
+                       voice.lang.includes('CO') ? 'Colombia' :
+                       voice.lang.includes('AR') ? 'Argentina' : voice.lang;
+      option.textContent = `${voice.name.replace('Microsoft ', '').replace(' Online (Natural)', '')} (${langName})`;
+      if (index === 0) option.selected = true;
+      voiceSelect.appendChild(option);
+    });
+    ttsState.selectedVoice = ttsState.voices[0];
+  } else {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'No hay voces en español disponibles';
+    voiceSelect.appendChild(option);
+  }
+}
+
+function setupTTSListeners() {
+  // Main TTS button in toolbar
+  document.getElementById('ttsBtn').addEventListener('click', toggleTTSPanel);
+  
+  // Close panel
+  document.getElementById('closeTtsPanel').addEventListener('click', closeTTSPanel);
+  
+  // Play/Pause
+  document.getElementById('ttsPlayPause').addEventListener('click', toggleTTSPlayback);
+  
+  // Stop
+  document.getElementById('ttsStop').addEventListener('click', stopTTS);
+  
+  // Previous/Next paragraph
+  document.getElementById('ttsPrevParagraph').addEventListener('click', ttsPrevParagraph);
+  document.getElementById('ttsNextParagraph').addEventListener('click', ttsNextParagraph);
+  
+  // Speed buttons
+  document.querySelectorAll('.tts-speed-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tts-speed-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ttsState.rate = parseFloat(btn.dataset.speed);
+      
+      // If currently playing, restart with new speed
+      if (ttsState.isPlaying) {
+        const wasPlaying = !ttsState.isPaused;
+        stopTTS();
+        if (wasPlaying) {
+          setTimeout(() => speakCurrentParagraph(), 100);
+        }
+      }
+    });
+  });
+  
+  // Voice selection
+  document.getElementById('ttsVoiceSelect').addEventListener('change', (e) => {
+    const voiceName = e.target.value;
+    ttsState.selectedVoice = ttsState.voices.find(v => v.name === voiceName);
+    
+    // If currently playing, restart with new voice
+    if (ttsState.isPlaying) {
+      const wasPlaying = !ttsState.isPaused;
+      stopTTS();
+      if (wasPlaying) {
+        setTimeout(() => speakCurrentParagraph(), 100);
+      }
+    }
+  });
+}
+
+function toggleTTSPanel() {
+  const panel = document.getElementById('ttsPanel');
+  const btn = document.getElementById('ttsBtn');
+  
+  if (panel.classList.contains('active')) {
+    closeTTSPanel();
+  } else {
+    panel.classList.add('active');
+    btn.classList.add('active');
+    
+    // Extract text from current page if not already done
+    if (ttsState.paragraphs.length === 0) {
+      extractCurrentPageText();
+    }
+  }
+}
+
+function closeTTSPanel() {
+  const panel = document.getElementById('ttsPanel');
+  const btn = document.getElementById('ttsBtn');
+  
+  panel.classList.remove('active');
+  btn.classList.remove('active');
+}
+
+async function extractCurrentPageText() {
+  if (!pdfDoc) return;
+  
+  try {
+    const page = await pdfDoc.getPage(currentPage);
+    const textContent = await page.getTextContent();
+    
+    // Build text with proper spacing based on character positions
+    let paragraphs = [];
+    let currentLine = '';
+    let lastY = null;
+    let lastX = null;
+    let lastWidth = 0;
+    
+    textContent.items.forEach(item => {
+      const x = item.transform[4];
+      const y = item.transform[5];
+      const width = item.width || 0;
+      const str = item.str;
+      
+      // If Y position changed significantly, it's a new line
+      if (lastY !== null && Math.abs(y - lastY) > 5) {
+        // Check if it's a new paragraph (larger Y gap)
+        if (Math.abs(y - lastY) > 15) {
+          if (currentLine.trim()) {
+            paragraphs.push(cleanText(currentLine.trim()));
+          }
+          currentLine = str;
+        } else {
+          // Same paragraph, new line - add space if needed
+          if (currentLine && !currentLine.endsWith(' ') && !currentLine.endsWith('-')) {
+            currentLine += ' ';
+          } else if (currentLine.endsWith('-')) {
+            // Remove hyphen for word continuation
+            currentLine = currentLine.slice(0, -1);
+          }
+          currentLine += str;
+        }
+      } else {
+        // Same line - check horizontal spacing
+        if (lastX !== null && x > lastX + lastWidth + 2) {
+          // There's a gap, add space
+          if (!currentLine.endsWith(' ')) {
+            currentLine += ' ';
+          }
+        }
+        currentLine += str;
+      }
+      
+      lastX = x;
+      lastY = y;
+      lastWidth = width;
+    });
+    
+    // Add last paragraph
+    if (currentLine.trim()) {
+      paragraphs.push(cleanText(currentLine.trim()));
+    }
+    
+    // Filter out very short paragraphs (likely headers or page numbers)
+    paragraphs = paragraphs.filter(p => p.length > 10);
+    
+    ttsState.paragraphs = paragraphs;
+    ttsState.currentParagraphIndex = 0;
+    ttsState.currentPageIndex = currentPage;
+    
+    // Update UI
+    if (paragraphs.length > 0) {
+      document.getElementById('ttsCurrentText').textContent = paragraphs[0];
+      document.getElementById('ttsStatus').textContent = `🔊 Página ${currentPage} - Párrafo 1/${paragraphs.length}`;
+    } else {
+      document.getElementById('ttsCurrentText').textContent = 'No se encontró texto en esta página';
+      document.getElementById('ttsStatus').textContent = '🔊 Sin texto disponible';
+    }
+    
+    updateTTSProgress();
+    
+  } catch (error) {
+    console.error('Error extracting text:', error);
+    document.getElementById('ttsCurrentText').textContent = 'Error al extraer el texto';
+  }
+}
+
+// Clean extracted text - fix common PDF extraction issues
+function cleanText(text) {
+  let cleaned = text;
+  
+  // First pass: detect and fix spaced-out words (like "D i s e ñ a r")
+  // Pattern: single letter followed by space, repeated multiple times
+  cleaned = cleaned.replace(/\b([a-záéíóúüñA-ZÁÉÍÓÚÜÑ])\s+(?=[a-záéíóúüñA-ZÁÉÍÓÚÜÑ](\s+[a-záéíóúüñA-ZÁÉÍÓÚÜÑ])+\b)/g, 
+    (match, letter) => letter);
+  
+  // Second pass: join remaining isolated single letters
+  // This catches patterns like "a l g o r i t m o"
+  let words = cleaned.split(/\s+/);
+  let result = [];
+  let buffer = '';
+  
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    
+    // If it's a single letter (not common single-letter words)
+    if (word.length === 1 && !/^[aeouyAEOUY]$/i.test(word)) {
+      buffer += word;
+    } else if (word.length === 1 && buffer.length > 0) {
+      // Single letter that could be part of spaced word
+      buffer += word;
+    } else {
+      // Regular word
+      if (buffer.length > 0) {
+        // Check if buffer forms a valid-looking word (3+ chars)
+        if (buffer.length >= 3) {
+          result.push(buffer);
+        } else {
+          // Too short, probably separate letters
+          result.push(...buffer.split(''));
+        }
+        buffer = '';
+      }
+      result.push(word);
+    }
+  }
+  
+  // Don't forget remaining buffer
+  if (buffer.length >= 3) {
+    result.push(buffer);
+  } else if (buffer.length > 0) {
+    result.push(...buffer.split(''));
+  }
+  
+  cleaned = result.join(' ');
+  
+  // Final cleanup
+  return cleaned
+    // Fix multiple spaces
+    .replace(/\s+/g, ' ')
+    // Fix spaces before punctuation
+    .replace(/\s+([.,;:!?])/g, '$1')
+    // Fix spaces after opening brackets
+    .replace(/\(\s+/g, '(')
+    // Fix spaces before closing brackets
+    .replace(/\s+\)/g, ')')
+    // Fix number spacing (like "1 . 2 ." -> "1. 2.")
+    .replace(/(\d)\s+\./g, '$1.')
+    .trim();
+}
+
+function toggleTTSPlayback() {
+  if (!ttsState.isSupported) return;
+  
+  if (ttsState.isPlaying && !ttsState.isPaused) {
+    pauseTTS();
+  } else if (ttsState.isPaused) {
+    resumeTTS();
+  } else {
+    startTTS();
+  }
+}
+
+// Workaround for Chrome bug where pause/resume doesn't work properly
+// We need to keep the speech synthesis active
+let ttsKeepAliveInterval = null;
+
+function startTTSKeepAlive() {
+  // Chrome has a bug where speech synthesis stops after ~15 seconds of pause
+  // This workaround keeps it alive
+  if (ttsKeepAliveInterval) clearInterval(ttsKeepAliveInterval);
+  ttsKeepAliveInterval = setInterval(() => {
+    if (speechSynthesis.paused) {
+      speechSynthesis.pause();
+      speechSynthesis.resume();
+      speechSynthesis.pause();
+    }
+  }, 5000);
+}
+
+function stopTTSKeepAlive() {
+  if (ttsKeepAliveInterval) {
+    clearInterval(ttsKeepAliveInterval);
+    ttsKeepAliveInterval = null;
+  }
+}
+
+function startTTS() {
+  if (ttsState.paragraphs.length === 0) {
+    extractCurrentPageText().then(() => {
+      if (ttsState.paragraphs.length > 0) {
+        speakCurrentParagraph();
+      }
+    });
+  } else {
+    speakCurrentParagraph();
+  }
+}
+
+function speakCurrentParagraph() {
+  if (ttsState.currentParagraphIndex >= ttsState.paragraphs.length) {
+    // Move to next page
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+      ttsState.currentParagraphIndex = 0;
+      extractCurrentPageText().then(() => {
+        if (ttsState.paragraphs.length > 0) {
+          speakCurrentParagraph();
+        } else {
+          stopTTS();
+        }
+      });
+    } else {
+      stopTTS();
+      showToast('Lectura completada', 'success');
+    }
+    return;
+  }
+  
+  const text = ttsState.paragraphs[ttsState.currentParagraphIndex];
+  
+  // Cancel any ongoing speech
+  speechSynthesis.cancel();
+  
+  // Create utterance
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.voice = ttsState.selectedVoice;
+  utterance.rate = ttsState.rate;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+  
+  // Event handlers
+  utterance.onstart = () => {
+    ttsState.isPlaying = true;
+    ttsState.isPaused = false;
+    updateTTSUI(true);
+  };
+  
+  utterance.onend = () => {
+    // Move to next paragraph
+    ttsState.currentParagraphIndex++;
+    updateTTSProgress();
+    
+    if (ttsState.isPlaying && !ttsState.isPaused) {
+      speakCurrentParagraph();
+    }
+  };
+  
+  utterance.onerror = (event) => {
+    console.error('TTS Error:', event.error);
+    if (event.error !== 'interrupted') {
+      showToast('Error en la lectura por voz', 'error');
+    }
+  };
+  
+  ttsState.currentUtterance = utterance;
+  
+  // Update UI
+  document.getElementById('ttsCurrentText').textContent = text;
+  document.getElementById('ttsStatus').textContent = 
+    `🔊 Página ${currentPage} - Párrafo ${ttsState.currentParagraphIndex + 1}/${ttsState.paragraphs.length}`;
+  
+  // Speak
+  speechSynthesis.speak(utterance);
+}
+
+function pauseTTS() {
+  if (speechSynthesis.speaking && !speechSynthesis.paused) {
+    speechSynthesis.pause();
+    ttsState.isPaused = true;
+    startTTSKeepAlive();
+    updateTTSUI(false);
+  }
+}
+
+function resumeTTS() {
+  stopTTSKeepAlive();
+  
+  if (speechSynthesis.paused) {
+    speechSynthesis.resume();
+    ttsState.isPaused = false;
+    updateTTSUI(true);
+  } else if (ttsState.isPaused) {
+    // If pause state is out of sync, restart from current paragraph
+    ttsState.isPaused = false;
+    speakCurrentParagraph();
+  }
+}
+
+function stopTTS() {
+  stopTTSKeepAlive();
+  speechSynthesis.cancel();
+  ttsState.isPlaying = false;
+  ttsState.isPaused = false;
+  ttsState.currentParagraphIndex = 0;
+  updateTTSUI(false);
+  updateTTSProgress();
+  
+  if (ttsState.paragraphs.length > 0) {
+    document.getElementById('ttsCurrentText').textContent = ttsState.paragraphs[0];
+  }
+}
+
+function ttsPrevParagraph() {
+  if (ttsState.currentParagraphIndex > 0) {
+    ttsState.currentParagraphIndex--;
+    updateTTSProgress();
+    
+    if (ttsState.isPlaying) {
+      speechSynthesis.cancel();
+      speakCurrentParagraph();
+    } else {
+      document.getElementById('ttsCurrentText').textContent = 
+        ttsState.paragraphs[ttsState.currentParagraphIndex];
+      document.getElementById('ttsStatus').textContent = 
+        `🔊 Página ${currentPage} - Párrafo ${ttsState.currentParagraphIndex + 1}/${ttsState.paragraphs.length}`;
+    }
+  } else if (currentPage > 1) {
+    // Go to previous page
+    goToPage(currentPage - 1);
+    extractCurrentPageText().then(() => {
+      ttsState.currentParagraphIndex = ttsState.paragraphs.length - 1;
+      updateTTSProgress();
+      
+      if (ttsState.paragraphs.length > 0) {
+        document.getElementById('ttsCurrentText').textContent = 
+          ttsState.paragraphs[ttsState.currentParagraphIndex];
+        document.getElementById('ttsStatus').textContent = 
+          `🔊 Página ${currentPage} - Párrafo ${ttsState.currentParagraphIndex + 1}/${ttsState.paragraphs.length}`;
+        
+        if (ttsState.isPlaying) {
+          speakCurrentParagraph();
+        }
+      }
+    });
+  }
+}
+
+function ttsNextParagraph() {
+  if (ttsState.currentParagraphIndex < ttsState.paragraphs.length - 1) {
+    ttsState.currentParagraphIndex++;
+    updateTTSProgress();
+    
+    if (ttsState.isPlaying) {
+      speechSynthesis.cancel();
+      speakCurrentParagraph();
+    } else {
+      document.getElementById('ttsCurrentText').textContent = 
+        ttsState.paragraphs[ttsState.currentParagraphIndex];
+      document.getElementById('ttsStatus').textContent = 
+        `🔊 Página ${currentPage} - Párrafo ${ttsState.currentParagraphIndex + 1}/${ttsState.paragraphs.length}`;
+    }
+  } else if (currentPage < totalPages) {
+    // Go to next page
+    goToPage(currentPage + 1);
+    extractCurrentPageText().then(() => {
+      ttsState.currentParagraphIndex = 0;
+      updateTTSProgress();
+      
+      if (ttsState.paragraphs.length > 0) {
+        document.getElementById('ttsCurrentText').textContent = 
+          ttsState.paragraphs[0];
+        document.getElementById('ttsStatus').textContent = 
+          `🔊 Página ${currentPage} - Párrafo 1/${ttsState.paragraphs.length}`;
+        
+        if (ttsState.isPlaying) {
+          speakCurrentParagraph();
+        }
+      }
+    });
+  }
+}
+
+function updateTTSUI(isPlaying) {
+  const playBtn = document.getElementById('ttsPlayPause');
+  const ttsBtn = document.getElementById('ttsBtn');
+  const playIcon = playBtn.querySelector('.play-icon');
+  const pauseIcon = playBtn.querySelector('.pause-icon');
+  const toolbarPlayIcon = ttsBtn.querySelector('.tts-icon-play');
+  const toolbarPauseIcon = ttsBtn.querySelector('.tts-icon-pause');
+  
+  if (isPlaying) {
+    playIcon.style.display = 'none';
+    pauseIcon.style.display = 'block';
+    playBtn.classList.add('playing');
+    ttsBtn.classList.add('speaking');
+    toolbarPlayIcon.style.display = 'none';
+    toolbarPauseIcon.style.display = 'block';
+  } else {
+    playIcon.style.display = 'block';
+    pauseIcon.style.display = 'none';
+    playBtn.classList.remove('playing');
+    ttsBtn.classList.remove('speaking');
+    toolbarPlayIcon.style.display = 'block';
+    toolbarPauseIcon.style.display = 'none';
+  }
+}
+
+function updateTTSProgress() {
+  const progressBar = document.getElementById('ttsProgressBar');
+  
+  if (ttsState.paragraphs.length > 0) {
+    const progress = ((ttsState.currentParagraphIndex) / ttsState.paragraphs.length) * 100;
+    progressBar.style.width = progress + '%';
+  } else {
+    progressBar.style.width = '0%';
+  }
+}
+
+// Reset TTS when page changes
+function onPageChange() {
+  if (ttsState.currentPageIndex !== currentPage) {
+    const wasPlaying = ttsState.isPlaying && !ttsState.isPaused;
+    
+    if (wasPlaying) {
+      speechSynthesis.cancel();
+    }
+    
+    ttsState.paragraphs = [];
+    ttsState.currentParagraphIndex = 0;
+    
+    // If TTS panel is open, extract new page text
+    if (document.getElementById('ttsPanel').classList.contains('active')) {
+      extractCurrentPageText().then(() => {
+        if (wasPlaying && ttsState.paragraphs.length > 0) {
+          speakCurrentParagraph();
+        }
+      });
+    }
+  }
 }

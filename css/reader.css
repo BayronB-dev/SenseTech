@@ -787,6 +787,230 @@ body.fullscreen .reader-sidebar {
   }
 }
 
+/* ===== TTS PANEL ===== */
+.tts-panel {
+  position: fixed;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%) translateY(150%);
+  width: 90%;
+  max-width: 500px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  z-index: 200;
+  transition: transform 0.3s ease;
+}
+
+.tts-panel.active {
+  transform: translateX(-50%) translateY(0);
+}
+
+.tts-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tts-status {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+.tts-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.tts-close:hover {
+  color: var(--text-primary);
+}
+
+.tts-panel-body {
+  padding: var(--space-lg);
+}
+
+.tts-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.tts-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tts-control-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.tts-control-btn.tts-play-btn {
+  width: 56px;
+  height: 56px;
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+}
+
+.tts-control-btn.tts-play-btn:hover {
+  background: var(--accent-secondary);
+  border-color: var(--accent-secondary);
+}
+
+.tts-control-btn.tts-play-btn.playing {
+  background: var(--warning-500);
+  border-color: var(--warning-500);
+}
+
+.tts-progress {
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-full);
+  margin-bottom: var(--space-md);
+  overflow: hidden;
+}
+
+.tts-progress-bar {
+  height: 100%;
+  background: var(--accent-primary);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.tts-current-text {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+  padding: var(--space-md);
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-lg);
+  max-height: 80px;
+  overflow-y: auto;
+  line-height: 1.5;
+}
+
+.tts-settings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.tts-setting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.tts-setting label {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tts-speed-control {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.tts-speed-btn {
+  flex: 1;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tts-speed-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.tts-speed-btn.active {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: white;
+}
+
+.tts-voice-select {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.tts-voice-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+}
+
+/* TTS Button Active State */
+.tts-btn.active {
+  background: var(--accent-primary);
+  color: white;
+}
+
+.tts-btn.speaking {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* TTS Highlight for current text being read */
+.tts-highlight {
+  background: rgba(99, 102, 241, 0.2);
+  border-radius: 2px;
+}
+
+/* Mobile TTS Panel */
+@media (max-width: 768px) {
+  .tts-panel {
+    width: 95%;
+    bottom: var(--space-md);
+  }
+  
+  .tts-speed-control {
+    flex-wrap: wrap;
+  }
+  
+  .tts-speed-btn {
+    flex: 0 0 calc(33.33% - var(--space-xs));
+  }
+}
+
 /* ===== DARK MODE ADJUSTMENTS ===== */
 [data-theme="dark"] .pdf-page {
   filter: invert(0.85) hue-rotate(180deg);

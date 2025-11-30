@@ -75,13 +75,16 @@
         </div>
       </div>
 
-      <!-- TTS Button (for future AI reading) -->
-      <button class="toolbar-btn tts-btn" id="ttsBtn" title="Lectura por voz (próximamente)" disabled>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-          <line x1="12" y1="19" x2="12" y2="23"/>
-          <line x1="8" y1="23" x2="16" y2="23"/>
+      <!-- TTS Button -->
+      <button class="toolbar-btn tts-btn" id="ttsBtn" title="Lectura por voz">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tts-icon-play">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tts-icon-pause" style="display:none;">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
         </svg>
       </button>
 
@@ -241,6 +244,72 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" id="cancelBookmark">Cancelar</button>
         <button class="btn btn-primary" id="saveBookmark">Guardar marcador</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TTS Control Panel -->
+  <div class="tts-panel" id="ttsPanel">
+    <div class="tts-panel-header">
+      <span class="tts-status" id="ttsStatus">🔊 Lectura por voz</span>
+      <button class="tts-close" id="closeTtsPanel">&times;</button>
+    </div>
+    <div class="tts-panel-body">
+      <div class="tts-controls">
+        <button class="tts-control-btn" id="ttsPrevParagraph" title="Párrafo anterior">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="19 20 9 12 19 4 19 20"/>
+            <line x1="5" y1="19" x2="5" y2="5"/>
+          </svg>
+        </button>
+        <button class="tts-control-btn tts-play-btn" id="ttsPlayPause" title="Reproducir/Pausar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="play-icon">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="pause-icon" style="display:none;">
+            <rect x="6" y="4" width="4" height="16"/>
+            <rect x="14" y="4" width="4" height="16"/>
+          </svg>
+        </button>
+        <button class="tts-control-btn" id="ttsStop" title="Detener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="4" width="16" height="16" rx="2"/>
+          </svg>
+        </button>
+        <button class="tts-control-btn" id="ttsNextParagraph" title="Siguiente párrafo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 4 15 12 5 20 5 4"/>
+            <line x1="19" y1="5" x2="19" y2="19"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="tts-progress">
+        <div class="tts-progress-bar" id="ttsProgressBar"></div>
+      </div>
+      
+      <div class="tts-current-text" id="ttsCurrentText">
+        Selecciona una página para comenzar la lectura
+      </div>
+      
+      <div class="tts-settings">
+        <div class="tts-setting">
+          <label>Velocidad</label>
+          <div class="tts-speed-control">
+            <button class="tts-speed-btn" data-speed="0.5">0.5x</button>
+            <button class="tts-speed-btn" data-speed="0.75">0.75x</button>
+            <button class="tts-speed-btn active" data-speed="1">1x</button>
+            <button class="tts-speed-btn" data-speed="1.25">1.25x</button>
+            <button class="tts-speed-btn" data-speed="1.5">1.5x</button>
+          </div>
+        </div>
+        
+        <div class="tts-setting">
+          <label>Voz</label>
+          <select id="ttsVoiceSelect" class="tts-voice-select">
+            <option value="">Cargando voces...</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>
