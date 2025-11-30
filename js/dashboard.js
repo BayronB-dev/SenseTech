@@ -70,6 +70,17 @@ function updateDashboardUI() {
     }
   });
   
+  // Update mobile avatars
+  const mobileAvatars = document.querySelectorAll('#mobileUserAvatar, #mobileNavAvatar');
+  mobileAvatars.forEach(avatar => {
+    if (photoUrl) {
+      avatar.innerHTML = `<img src="${photoUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+    } else {
+      avatar.innerHTML = '';
+      avatar.textContent = initial;
+    }
+  });
+  
   // Update user name in menu (by ID)
   const userNameEl = document.getElementById('userName');
   if (userNameEl) {
@@ -81,6 +92,12 @@ function updateDashboardUI() {
   if (userEmailEl) {
     userEmailEl.textContent = email;
   }
+  
+  // Update mobile user info
+  const mobileNameEl = document.getElementById('mobileUserName');
+  const mobileEmailEl = document.getElementById('mobileUserEmail');
+  if (mobileNameEl) mobileNameEl.textContent = name;
+  if (mobileEmailEl) mobileEmailEl.textContent = email;
   
   // Show admin button if user is admin
   if (isAdmin) {

@@ -6,29 +6,19 @@
 // State
 let allResources = [];
 let filteredResources = [];
+let allCategories = [];
+let categoryLabels = {};
 let currentFilters = {
   search: '',
   category: '',
   type: '',
-  sort: 'newest'
+  sort: 'popular'
 };
 let currentPage = 1;
 const ITEMS_PER_PAGE = 12;
 let currentView = 'grid';
 let currentUser = null;
 let userFavorites = [];
-
-// Category labels
-const categoryLabels = {
-  'programming': 'Programación',
-  'databases': 'Bases de Datos',
-  'networks': 'Redes',
-  'software-engineering': 'Ingeniería de Software',
-  'ai-ml': 'IA & Machine Learning',
-  'security': 'Seguridad',
-  'devops': 'DevOps',
-  'other': 'Otros'
-};
 
 // Type labels and icons
 const typeConfig = {
@@ -65,11 +55,91 @@ async function initLibrary() {
   // Update user display
   updateUserDisplay(profile);
   
+  // Load categories from database
+  await loadCategoriesFromDB();
+  
   // Load user favorites
   await loadUserFavorites();
   
   // Load resources
   await loadResources();
+}
+
+async function loadCategoriesFromDB() {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    
+    allCategories = data || [];
+    
+    // Update lookup object
+    categoryLabels = {};
+    allCategories.forEach(cat => {
+      categoryLabels[cat.slug] = cat.name;
+    });
+    
+    // Update category filter dropdown
+    updateCategoryFilterOptions();
+    
+  } catch (error) {
+    console.error('Error loading categories:', error);
+    // Fallback
+    categoryLabels = { 'other': 'Otros' };
+  }
+}
+
+function updateCategoryFilterOptions() {
+  const menu = document.getElementById('categoryMenu');
+  if (!menu) return;
+  
+  // Keep the "Todas" option, replace the rest
+  const allOption = menu.querySelector('[data-value=""]');
+  menu.innerHTML = '';
+  
+  if (allOption) {
+    menu.appendChild(allOption);
+  } else {
+    const opt = document.createElement('button');
+    opt.className = 'filter-option active';
+    opt.dataset.value = '';
+    opt.textContent = 'Todas';
+    menu.appendChild(opt);
+  }
+  
+  allCategories.forEach(cat => {
+    const opt = document.createElement('button');
+    opt.className = 'filter-option';
+    opt.dataset.value = cat.slug;
+    opt.textContent = cat.name;
+    menu.appendChild(opt);
+  });
+  
+  // Re-attach event listeners
+  menu.querySelectorAll('.filter-option').forEach(option => {
+    option.addEventListener('click', () => {
+      menu.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
+      option.classList.add('active');
+      
+      const value = option.dataset.value;
+      currentFilters.category = value;
+      
+      const label = document.getElementById('categoryLabel');
+      if (label) {
+        label.textContent = value ? categoryLabels[value] : 'Categoría';
+      }
+      
+      currentPage = 1;
+      applyFilters();
+      
+      // Close dropdown
+      menu.parentElement.querySelector('.filter-btn')?.setAttribute('aria-expanded', 'false');
+      menu.style.display = 'none';
+    });
+  });
 }
 
 function updateUserDisplay(profile) {
@@ -79,20 +149,49 @@ function updateUserDisplay(profile) {
   const photoUrl = profile?.photo_url;
   const isAdmin = profile?.role === 'admin';
   
+  // Desktop elements
   const avatarEl = document.getElementById('userAvatar');
   const nameEl = document.getElementById('userName');
   const emailEl = document.getElementById('userEmail');
   
+  // Mobile elements
+  const mobileAvatarEl = document.getElementById('mobileUserAvatar');
+  const mobileNavAvatarEl = document.getElementById('mobileNavAvatar');
+  const mobileNameEl = document.getElementById('mobileUserName');
+  const mobileEmailEl = document.getElementById('mobileUserEmail');
+  
+  const avatarContent = photoUrl 
+    ? `<img src="${photoUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+    : initial;
+  
+  // Update desktop
   if (avatarEl) {
     if (photoUrl) {
-      avatarEl.innerHTML = `<img src="${photoUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+      avatarEl.innerHTML = avatarContent;
     } else {
       avatarEl.textContent = initial;
     }
   }
-  
   if (nameEl) nameEl.textContent = name;
   if (emailEl) emailEl.textContent = email;
+  
+  // Update mobile
+  if (mobileAvatarEl) {
+    if (photoUrl) {
+      mobileAvatarEl.innerHTML = avatarContent;
+    } else {
+      mobileAvatarEl.textContent = initial;
+    }
+  }
+  if (mobileNavAvatarEl) {
+    if (photoUrl) {
+      mobileNavAvatarEl.innerHTML = avatarContent;
+    } else {
+      mobileNavAvatarEl.textContent = initial;
+    }
+  }
+  if (mobileNameEl) mobileNameEl.textContent = name;
+  if (mobileEmailEl) mobileEmailEl.textContent = email;
   
   // Show admin button if user is admin
   if (isAdmin) {
@@ -337,7 +436,12 @@ function sortResources() {
       filteredResources.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
       break;
     case 'popular':
-      filteredResources.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+      // Popularidad = vistas + favoritos (misma prioridad)
+      filteredResources.sort((a, b) => {
+        const popularityA = (a.view_count || 0) + (a.favorite_count || 0);
+        const popularityB = (b.view_count || 0) + (b.favorite_count || 0);
+        return popularityB - popularityA;
+      });
       break;
   }
 }
@@ -414,7 +518,7 @@ function clearAllFilters() {
     search: '',
     category: '',
     type: '',
-    sort: 'newest'
+    sort: 'popular'
   };
   
   // Reset search
@@ -430,7 +534,7 @@ function clearAllFilters() {
     if (label) {
       if (key === 'category') label.textContent = 'Categoría';
       else if (key === 'type') label.textContent = 'Tipo';
-      else label.textContent = 'Más recientes';
+      else label.textContent = 'Más populares';
     }
     
     if (menu) {

@@ -70,8 +70,16 @@
 
   <!-- Mobile Navigation -->
   <div class="mobile-nav" aria-hidden="true">
+    <div class="mobile-user-info">
+      <div class="avatar" id="mobileNavAvatar">U</div>
+      <div class="user-details">
+        <div class="user-name" id="mobileUserName">Usuario</div>
+        <div class="user-email" id="mobileUserEmail">usuario@email.com</div>
+      </div>
+    </div>
     <a href="home.html" class="nav-link">Inicio</a>
     <a href="library.html" class="nav-link active">Biblioteca</a>
+    <a href="preferences.html" class="nav-link">Mi Perfil</a>
     <div class="theme-toggle-wrapper">
       <span>Tema</span>
       <button class="theme-toggle" aria-label="Cambiar tema">
@@ -81,8 +89,7 @@
       </button>
     </div>
     <div class="navbar-actions">
-      <a href="preferences.html" class="btn btn-secondary">Mi Perfil</a>
-      <button class="btn btn-ghost" id="mobileLogoutBtn">Cerrar Sesión</button>
+      <button class="btn btn-ghost danger" id="mobileLogoutBtn">🚪 Cerrar Sesión</button>
     </div>
   </div>
 
@@ -173,17 +180,17 @@
           <div class="filter-dropdown">
             <button class="filter-btn" id="sortBtn" aria-expanded="false">
               <span>↕️</span>
-              <span id="sortLabel">Ordenar</span>
+              <span id="sortLabel">Más populares</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="m6 9 6 6 6-6"/>
               </svg>
             </button>
             <div class="filter-menu" id="sortMenu">
-              <button class="filter-option active" data-value="newest">Más recientes</button>
+              <button class="filter-option" data-value="newest">Más recientes</button>
               <button class="filter-option" data-value="oldest">Más antiguos</button>
               <button class="filter-option" data-value="title-asc">Título A-Z</button>
               <button class="filter-option" data-value="title-desc">Título Z-A</button>
-              <button class="filter-option" data-value="popular">Más populares</button>
+              <button class="filter-option active" data-value="popular">Más populares</button>
             </div>
           </div>
         </div>

@@ -7,19 +7,9 @@
 let currentUser = null;
 let currentResource = null;
 let userProgress = null;
+let categoryLabels = {};
 
 // Config
-const categoryLabels = {
-  'programming': 'Programación',
-  'databases': 'Bases de Datos',
-  'networks': 'Redes',
-  'software-engineering': 'Ingeniería de Software',
-  'ai-ml': 'IA & Machine Learning',
-  'security': 'Seguridad',
-  'devops': 'DevOps',
-  'other': 'Otros'
-};
-
 const typeConfig = {
   'book': { label: 'Libro', icon: '📕' },
   'pdf': { label: 'PDF', icon: '📄' },
@@ -48,6 +38,9 @@ async function initResourcePage() {
   currentUser = user;
   updateUserDisplay(profile);
   
+  // Load categories from database
+  await loadCategoriesFromDB();
+  
   // Get resource ID from URL (try hash first, then query string)
   let resourceId = window.location.hash.slice(1); // Remove the # symbol
   
@@ -73,20 +66,49 @@ function updateUserDisplay(profile) {
   const photoUrl = profile?.photo_url;
   const isAdmin = profile?.role === 'admin';
   
+  // Desktop elements
   const avatarEl = document.getElementById('userAvatar');
   const nameEl = document.getElementById('userName');
   const emailEl = document.getElementById('userEmail');
   
+  // Mobile elements
+  const mobileAvatarEl = document.getElementById('mobileUserAvatar');
+  const mobileNavAvatarEl = document.getElementById('mobileNavAvatar');
+  const mobileNameEl = document.getElementById('mobileUserName');
+  const mobileEmailEl = document.getElementById('mobileUserEmail');
+  
+  const avatarContent = photoUrl 
+    ? `<img src="${photoUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
+    : null;
+  
+  // Update desktop
   if (avatarEl) {
     if (photoUrl) {
-      avatarEl.innerHTML = `<img src="${photoUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+      avatarEl.innerHTML = avatarContent;
     } else {
       avatarEl.textContent = initial;
     }
   }
-  
   if (nameEl) nameEl.textContent = name;
   if (emailEl) emailEl.textContent = email;
+  
+  // Update mobile
+  if (mobileAvatarEl) {
+    if (photoUrl) {
+      mobileAvatarEl.innerHTML = avatarContent;
+    } else {
+      mobileAvatarEl.textContent = initial;
+    }
+  }
+  if (mobileNavAvatarEl) {
+    if (photoUrl) {
+      mobileNavAvatarEl.innerHTML = avatarContent;
+    } else {
+      mobileNavAvatarEl.textContent = initial;
+    }
+  }
+  if (mobileNameEl) mobileNameEl.textContent = name;
+  if (mobileEmailEl) mobileEmailEl.textContent = email;
   
   if (isAdmin) {
     showAdminButton();
@@ -102,6 +124,25 @@ function showAdminButton() {
     adminLink.className = 'nav-link admin-link';
     adminLink.innerHTML = '⚙️ Panel de Control';
     navbarNav.appendChild(adminLink);
+  }
+}
+
+async function loadCategoriesFromDB() {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('slug, name');
+    
+    if (error) throw error;
+    
+    categoryLabels = {};
+    (data || []).forEach(cat => {
+      categoryLabels[cat.slug] = cat.name;
+    });
+    
+  } catch (error) {
+    console.error('Error loading categories:', error);
+    categoryLabels = { 'other': 'Otros' };
   }
 }
 
@@ -155,18 +196,59 @@ async function loadResource(resourceId) {
 
 async function incrementViewCount(resourceId) {
   try {
-    // Try RPC first
-    const { error: rpcError } = await supabase.rpc('increment_view_count', { rid: resourceId });
+    // Convertir a número ya que resource_id es int4 en la base de datos
+    const numericResourceId = parseInt(resourceId, 10);
     
-    if (rpcError) {
-      // Fallback: update directly
-      console.log('RPC not available, using direct update');
-      const currentCount = parseInt(currentResource.view_count) || 0;
-      await supabase
-        .from('resources')
-        .update({ view_count: currentCount + 1 })
-        .eq('id', resourceId);
+    // Verificar si el usuario ya tiene un registro de progreso para este recurso
+    const { data: existingProgress, error: selectError } = await supabase
+      .from('user_progress')
+      .select('id, has_viewed')
+      .eq('user_id', currentUser.id)
+      .eq('resource_id', numericResourceId)
+      .maybeSingle();
+    
+    console.log('Checking view status:', { existingProgress, selectError });
+    
+    // Si ya vio este recurso, no incrementar
+    if (existingProgress && existingProgress.has_viewed === true) {
+      console.log('User already viewed this resource');
+      return;
     }
+    
+    // Marcar como visto en user_progress
+    if (existingProgress) {
+      // Actualizar registro existente
+      const { error: updateError } = await supabase
+        .from('user_progress')
+        .update({ has_viewed: true })
+        .eq('id', existingProgress.id);
+      
+      if (updateError) console.error('Error updating has_viewed:', updateError);
+    } else {
+      // Crear nuevo registro
+      const { error: insertError } = await supabase
+        .from('user_progress')
+        .insert({
+          user_id: currentUser.id,
+          resource_id: numericResourceId,
+          has_viewed: true,
+          progress: 0,
+          is_favorite: false
+        });
+      
+      if (insertError) console.error('Error inserting progress:', insertError);
+    }
+    
+    // Incrementar contador de vistas
+    const currentCount = parseInt(currentResource.view_count) || 0;
+    const { error: viewError } = await supabase
+      .from('resources')
+      .update({ view_count: currentCount + 1 })
+      .eq('id', numericResourceId);
+    
+    if (viewError) console.error('Error updating view_count:', viewError);
+    else console.log('View count incremented successfully');
+      
   } catch (error) {
     console.log('View count update failed:', error);
   }
@@ -174,12 +256,13 @@ async function incrementViewCount(resourceId) {
 
 async function loadUserProgress(resourceId) {
   try {
+    const numericResourceId = parseInt(resourceId, 10);
     const { data } = await supabase
       .from('user_progress')
       .select('*')
       .eq('user_id', currentUser.id)
-      .eq('resource_id', resourceId)
-      .single();
+      .eq('resource_id', numericResourceId)
+      .maybeSingle();
     
     userProgress = data;
   } catch (error) {
@@ -214,8 +297,10 @@ function renderResource() {
   document.getElementById('resourceTitle').textContent = resource.title || 'Sin título';
   document.getElementById('resourceAuthor').textContent = resource.author ? `Por ${resource.author}` : '';
   
-  // Stats
-  document.getElementById('viewCount').textContent = (resource.view_count || 0) + 1; // +1 for current view
+  // Stats - Solo mostrar +1 si el usuario no ha visto el recurso antes
+  const hasViewed = userProgress?.has_viewed === true;
+  const displayViewCount = hasViewed ? (resource.view_count || 0) : (resource.view_count || 0) + 1;
+  document.getElementById('viewCount').textContent = displayViewCount;
   document.getElementById('favoriteCount').textContent = resource.favorite_count || 0;
   document.getElementById('dateAdded').textContent = formatDate(resource.created_at);
   
@@ -502,7 +587,12 @@ function formatDate(dateString) {
   if (!dateString) return '--';
   
   const date = new Date(dateString);
-  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  const options = { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+  };
   return date.toLocaleDateString('es-ES', options);
 }
 

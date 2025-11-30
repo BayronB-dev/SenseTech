@@ -8,30 +8,12 @@ let currentUser = null;
 let currentProfile = null;
 let allResources = [];
 let allUsers = [];
+let allCategories = [];
 let deleteTarget = null;
 
-// Category config
-const categoryLabels = {
-  'programming': 'Programación',
-  'databases': 'Bases de Datos',
-  'networks': 'Redes',
-  'software-engineering': 'Ingeniería de Software',
-  'ai-ml': 'IA & Machine Learning',
-  'security': 'Seguridad',
-  'devops': 'DevOps',
-  'other': 'Otros'
-};
-
-const categoryIcons = {
-  'programming': '💻',
-  'databases': '🗄️',
-  'networks': '🌐',
-  'software-engineering': '⚙️',
-  'ai-ml': '🤖',
-  'security': '🔒',
-  'devops': '🚀',
-  'other': '📁'
-};
+// Category config (loaded from database)
+let categoryLabels = {};
+let categoryIcons = {};
 
 const typeConfig = {
   'book': { label: 'Libro', icon: '📕' },
@@ -67,6 +49,9 @@ async function initAdmin() {
   currentUser = user;
   currentProfile = profile;
   
+  // Load categories from database
+  await loadCategoriesFromDB();
+  
   // Update admin display
   updateAdminDisplay();
   
@@ -78,6 +63,7 @@ async function initAdmin() {
   
   // Init modals
   initModals();
+  initCategoryModal();
   
   // Load dashboard data
   await loadDashboard();
@@ -309,26 +295,75 @@ function renderResourcesTable(resources) {
 
 function initResourceFilters() {
   const searchInput = document.getElementById('resourceSearch');
-  const filterSelect = document.getElementById('resourceFilter');
+  const categoryFilter = document.getElementById('resourceFilter');
+  const typeFilter = document.getElementById('resourceTypeFilter');
+  const sortSelect = document.getElementById('resourceSort');
   
-  const filterResources = () => {
-    const search = searchInput.value.toLowerCase();
-    const category = filterSelect.value;
+  const filterAndSortResources = () => {
+    const search = searchInput?.value.toLowerCase() || '';
+    const category = categoryFilter?.value || '';
+    const type = typeFilter?.value || '';
+    const sort = sortSelect?.value || 'popular';
     
-    const filtered = allResources.filter(r => {
+    // Filtrar
+    let filtered = allResources.filter(r => {
       const matchesSearch = !search || 
         r.title?.toLowerCase().includes(search) ||
-        r.author?.toLowerCase().includes(search);
+        r.author?.toLowerCase().includes(search) ||
+        r.description?.toLowerCase().includes(search);
       const matchesCategory = !category || r.category === category;
+      const matchesType = !type || r.type === type;
       
-      return matchesSearch && matchesCategory;
+      return matchesSearch && matchesCategory && matchesType;
     });
+    
+    // Ordenar
+    switch (sort) {
+      case 'popular':
+        filtered.sort((a, b) => {
+          const popA = (a.view_count || 0) + (a.favorite_count || 0);
+          const popB = (b.view_count || 0) + (b.favorite_count || 0);
+          return popB - popA;
+        });
+        break;
+      case 'least-popular':
+        filtered.sort((a, b) => {
+          const popA = (a.view_count || 0) + (a.favorite_count || 0);
+          const popB = (b.view_count || 0) + (b.favorite_count || 0);
+          return popA - popB;
+        });
+        break;
+      case 'newest':
+        filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        break;
+      case 'oldest':
+        filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        break;
+      case 'title-asc':
+        filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+        break;
+      case 'title-desc':
+        filtered.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+        break;
+      case 'views':
+        filtered.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+        break;
+      case 'favorites':
+        filtered.sort((a, b) => (b.favorite_count || 0) - (a.favorite_count || 0));
+        break;
+    }
     
     renderResourcesTable(filtered);
   };
   
-  searchInput?.addEventListener('input', filterResources);
-  filterSelect?.addEventListener('change', filterResources);
+  // Aplicar ordenamiento inicial
+  filterAndSortResources();
+  
+  // Event listeners
+  searchInput?.addEventListener('input', filterAndSortResources);
+  categoryFilter?.addEventListener('change', filterAndSortResources);
+  typeFilter?.addEventListener('change', filterAndSortResources);
+  sortSelect?.addEventListener('change', filterAndSortResources);
 }
 
 // ========================================
@@ -443,33 +478,255 @@ async function toggleUserRole(userId, currentRole) {
 // CATEGORIES
 // ========================================
 
+async function loadCategoriesFromDB() {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    
+    allCategories = data || [];
+    
+    // Update lookup objects
+    categoryLabels = {};
+    categoryIcons = {};
+    allCategories.forEach(cat => {
+      categoryLabels[cat.slug] = cat.name;
+      categoryIcons[cat.slug] = cat.icon || '📁';
+    });
+    
+    // Update selects
+    updateCategorySelects();
+    
+  } catch (error) {
+    console.error('Error loading categories:', error);
+    // Fallback defaults if table doesn't exist yet
+    categoryLabels = { 'other': 'Otros' };
+    categoryIcons = { 'other': '📁' };
+  }
+}
+
 async function loadCategories() {
   const container = document.getElementById('categoriesGrid');
   
   try {
-    // Count resources per category
-    const { data: resources } = await supabase
-      .from('resources')
-      .select('category');
+    // Reload from DB
+    await loadCategoriesFromDB();
     
+    // Count resources per category
     const counts = {};
-    (resources || []).forEach(r => {
+    allResources.forEach(r => {
       if (r.category) {
         counts[r.category] = (counts[r.category] || 0) + 1;
       }
     });
     
-    container.innerHTML = Object.entries(categoryLabels).map(([key, label]) => `
-      <div class="category-card">
-        <div class="icon">${categoryIcons[key] || '📁'}</div>
-        <h4>${label}</h4>
-        <p class="count">${counts[key] || 0} recursos</p>
+    if (allCategories.length === 0) {
+      container.innerHTML = '<p class="empty-text">No hay categorías. Crea una nueva.</p>';
+      return;
+    }
+    
+    container.innerHTML = allCategories.map(cat => `
+      <div class="category-card" data-category="${cat.slug}">
+        <div class="icon">${cat.icon || '📁'}</div>
+        <h4>${cat.name}</h4>
+        <p class="count">${counts[cat.slug] || 0} recursos</p>
+        <div class="category-actions">
+          <button class="action-btn" onclick="editCategory('${cat.slug}')" title="Editar">✏️</button>
+          <button class="action-btn danger" onclick="deleteCategoryBySlug('${cat.slug}')" title="Eliminar">🗑️</button>
+        </div>
       </div>
     `).join('');
     
   } catch (error) {
     console.error('Error loading categories:', error);
+    container.innerHTML = '<p class="empty-text">Error al cargar categorías</p>';
   }
+}
+
+function initCategoryModal() {
+  const modal = document.getElementById('categoryModal');
+  const addBtn = document.getElementById('addCategoryBtn');
+  const closeBtn = document.getElementById('closeCategoryModal');
+  const cancelBtn = document.getElementById('cancelCategoryBtn');
+  const form = document.getElementById('categoryForm');
+  const nameInput = document.getElementById('categoryName');
+  const slugInput = document.getElementById('categorySlug');
+  
+  addBtn?.addEventListener('click', () => openCategoryModal());
+  closeBtn?.addEventListener('click', () => closeCategoryModal());
+  cancelBtn?.addEventListener('click', () => closeCategoryModal());
+  form?.addEventListener('submit', saveCategory);
+  
+  // Auto-generate slug from name
+  nameInput?.addEventListener('input', () => {
+    if (!document.getElementById('categoryId').value) {
+      slugInput.value = nameInput.value
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+  });
+  
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeCategoryModal();
+  });
+}
+
+function openCategoryModal(categorySlug = null) {
+  const modal = document.getElementById('categoryModal');
+  const title = document.getElementById('categoryModalTitle');
+  const form = document.getElementById('categoryForm');
+  
+  if (categorySlug) {
+    const category = allCategories.find(c => c.slug === categorySlug);
+    if (category) {
+      title.textContent = 'Editar Categoría';
+      document.getElementById('categoryId').value = category.id;
+      document.getElementById('categoryName').value = category.name;
+      document.getElementById('categorySlug').value = category.slug;
+      document.getElementById('categoryIcon').value = category.icon || '';
+      document.getElementById('categorySlug').readOnly = true;
+    }
+  } else {
+    title.textContent = 'Nueva Categoría';
+    form.reset();
+    document.getElementById('categoryId').value = '';
+    document.getElementById('categorySlug').readOnly = false;
+  }
+  
+  modal.classList.add('active');
+}
+
+function closeCategoryModal() {
+  document.getElementById('categoryModal').classList.remove('active');
+}
+
+function editCategory(slug) {
+  openCategoryModal(slug);
+}
+
+async function saveCategory(e) {
+  e.preventDefault();
+  
+  const id = document.getElementById('categoryId').value;
+  const name = document.getElementById('categoryName').value.trim();
+  const slug = document.getElementById('categorySlug').value.trim().toLowerCase();
+  const icon = document.getElementById('categoryIcon').value.trim() || '📁';
+  
+  if (!name || !slug) {
+    showToast('Nombre y slug son requeridos', 'error');
+    return;
+  }
+  
+  // Validate slug format
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    showToast('El slug solo puede contener letras minúsculas, números y guiones', 'error');
+    return;
+  }
+  
+  const saveBtn = document.getElementById('saveCategoryBtn');
+  const originalText = saveBtn.textContent;
+  saveBtn.textContent = 'Guardando...';
+  saveBtn.disabled = true;
+  
+  try {
+    if (id) {
+      // Update existing
+      const { error } = await supabase
+        .from('categories')
+        .update({ name, icon })
+        .eq('id', parseInt(id));
+      
+      if (error) throw error;
+      showToast('Categoría actualizada');
+    } else {
+      // Check if slug exists
+      const existing = allCategories.find(c => c.slug === slug);
+      if (existing) {
+        showToast('Ya existe una categoría con ese identificador', 'error');
+        return;
+      }
+      
+      // Insert new
+      const { error } = await supabase
+        .from('categories')
+        .insert({ slug, name, icon });
+      
+      if (error) throw error;
+      showToast('Categoría creada');
+    }
+    
+    closeCategoryModal();
+    await loadCategories();
+    
+  } catch (error) {
+    console.error('Error saving category:', error);
+    showToast('Error al guardar: ' + (error.message || 'Error desconocido'), 'error');
+  } finally {
+    saveBtn.textContent = originalText;
+    saveBtn.disabled = false;
+  }
+}
+
+async function deleteCategoryBySlug(slug) {
+  // Check if category has resources
+  const resourceCount = allResources.filter(r => r.category === slug).length;
+  
+  if (resourceCount > 0) {
+    showToast(`No se puede eliminar: hay ${resourceCount} recursos en esta categoría`, 'error');
+    return;
+  }
+  
+  const category = allCategories.find(c => c.slug === slug);
+  if (!category) return;
+  
+  if (confirm(`¿Eliminar la categoría "${category.name}"?`)) {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', category.id);
+      
+      if (error) throw error;
+      
+      showToast('Categoría eliminada');
+      await loadCategories();
+      
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      showToast('Error al eliminar: ' + (error.message || 'Error desconocido'), 'error');
+    }
+  }
+}
+
+function updateCategorySelects() {
+  // Update category selects in resource form and filters
+  const selects = [
+    document.getElementById('resourceCategoryInput'),
+    document.getElementById('resourceFilter')
+  ];
+  
+  selects.forEach(select => {
+    if (!select) return;
+    
+    const currentValue = select.value;
+    const isFilter = select.id === 'resourceFilter';
+    
+    select.innerHTML = isFilter ? '<option value="">Todas las categorías</option>' : '<option value="">Seleccionar...</option>';
+    
+    allCategories.forEach(cat => {
+      const option = document.createElement('option');
+      option.value = cat.slug;
+      option.textContent = cat.name;
+      select.appendChild(option);
+    });
+    
+    select.value = currentValue;
+  });
 }
 
 // ========================================
@@ -671,6 +928,7 @@ function openResourceModal(resource = null) {
   const modal = document.getElementById('resourceModal');
   const title = document.getElementById('modalTitle');
   const form = document.getElementById('resourceForm');
+  const downloadBtn = document.getElementById('downloadFileBtn');
   
   // Reset file uploads
   selectedCoverFile = null;
@@ -679,6 +937,12 @@ function openResourceModal(resource = null) {
   document.getElementById('coverPreview').style.display = 'none';
   document.getElementById('fileUploadContent').style.display = 'flex';
   document.getElementById('fileInfo').style.display = 'none';
+  
+  // Reset download button
+  if (downloadBtn) {
+    downloadBtn.style.display = 'none';
+    downloadBtn.href = '#';
+  }
   
   if (resource) {
     title.textContent = 'Editar Recurso';
@@ -703,6 +967,12 @@ function openResourceModal(resource = null) {
       document.getElementById('fileSize').textContent = 'Archivo actual';
       document.getElementById('fileUploadContent').style.display = 'none';
       document.getElementById('fileInfo').style.display = 'flex';
+      
+      // Show download button
+      if (downloadBtn) {
+        downloadBtn.href = resource.file_url;
+        downloadBtn.style.display = 'inline-flex';
+      }
     }
   } else {
     title.textContent = 'Nuevo Recurso';
@@ -792,14 +1062,20 @@ async function saveResource(e) {
 }
 
 function editResource(id) {
-  const resource = allResources.find(r => r.id === id);
+  // Convertir a número para comparar correctamente
+  const numericId = parseInt(id, 10);
+  const resource = allResources.find(r => r.id === numericId);
   if (resource) {
     openResourceModal(resource);
+  } else {
+    console.error('Resource not found:', id);
+    showToast('Recurso no encontrado', 'error');
   }
 }
 
 function deleteResource(id) {
-  deleteTarget = { type: 'resource', id };
+  // Convertir a número para la operación de eliminación
+  deleteTarget = { type: 'resource', id: parseInt(id, 10) };
   document.getElementById('deleteModal').classList.add('active');
 }
 
@@ -813,12 +1089,28 @@ async function confirmDelete() {
   
   try {
     if (deleteTarget.type === 'resource') {
+      console.log('Attempting to delete resource:', deleteTarget.id);
+      
+      // Primero eliminar registros relacionados en user_progress
+      const { error: progressError } = await supabase
+        .from('user_progress')
+        .delete()
+        .eq('resource_id', deleteTarget.id);
+      
+      if (progressError) {
+        console.warn('Error deleting user_progress (may not exist):', progressError);
+      }
+      
+      // Luego eliminar el recurso
       const { error } = await supabase
         .from('resources')
         .delete()
         .eq('id', deleteTarget.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error details:', error);
+        throw error;
+      }
       
       showToast('Recurso eliminado');
       await loadResources();
@@ -828,7 +1120,7 @@ async function confirmDelete() {
     
   } catch (error) {
     console.error('Error deleting:', error);
-    showToast('Error al eliminar', 'error');
+    showToast('Error al eliminar: ' + (error.message || error.code || 'Error desconocido'), 'error');
   }
 }
 
@@ -842,7 +1134,8 @@ function formatDate(dateString) {
   return date.toLocaleDateString('es-ES', { 
     year: 'numeric', 
     month: 'short', 
-    day: 'numeric' 
+    day: 'numeric',
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
   });
 }
 

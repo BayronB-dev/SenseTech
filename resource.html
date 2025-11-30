@@ -70,8 +70,16 @@
 
   <!-- Mobile Navigation -->
   <div class="mobile-nav" aria-hidden="true">
+    <div class="mobile-user-info">
+      <div class="avatar" id="mobileNavAvatar">U</div>
+      <div class="user-details">
+        <div class="user-name" id="mobileUserName">Usuario</div>
+        <div class="user-email" id="mobileUserEmail">usuario@email.com</div>
+      </div>
+    </div>
     <a href="home.html" class="nav-link">Inicio</a>
     <a href="library.html" class="nav-link">Biblioteca</a>
+    <a href="preferences.html" class="nav-link">Mi Perfil</a>
     <div class="theme-toggle-wrapper">
       <span>Tema</span>
       <button class="theme-toggle" aria-label="Cambiar tema">
@@ -81,8 +89,7 @@
       </button>
     </div>
     <div class="navbar-actions">
-      <a href="preferences.html" class="btn btn-secondary">Mi Perfil</a>
-      <button class="btn btn-ghost" id="mobileLogoutBtn">Cerrar Sesión</button>
+      <button class="btn btn-ghost danger" id="mobileLogoutBtn">🚪 Cerrar Sesión</button>
     </div>
   </div>
 

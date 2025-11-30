@@ -564,15 +564,40 @@
 
   .library-controls {
     flex-direction: column;
+    gap: var(--space-sm);
   }
 
   .search-box {
     width: 100%;
+    min-width: unset;
   }
 
   .filter-controls {
     width: 100%;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+  }
+
+  .filter-dropdown {
+    width: 100%;
+  }
+
+  .filter-btn {
+    width: 100%;
+    justify-content: center;
+    padding: var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
+  .filter-btn span:first-child {
+    display: none;
+  }
+
+  .filter-menu {
+    min-width: 100%;
+    left: 0;
+    right: 0;
   }
 
   .view-toggle {
@@ -593,6 +618,24 @@
 
   .pagination {
     flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-controls {
+    grid-template-columns: 1fr;
+  }
+  
+  .library-stats {
+    gap: var(--space-sm);
+  }
+  
+  .library-stats .stat {
+    padding: var(--space-sm);
+  }
+  
+  .library-stats .stat-number {
+    font-size: var(--text-xl);
   }
 }
 
