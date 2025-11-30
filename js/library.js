@@ -58,11 +58,60 @@ async function initLibrary() {
   // Load categories from database
   await loadCategoriesFromDB();
   
+  // Check URL for category filter
+  applyUrlFilters();
+  
   // Load user favorites
   await loadUserFavorites();
   
   // Load resources
   await loadResources();
+}
+
+function applyUrlFilters() {
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Check for category parameter
+  const category = urlParams.get('category');
+  if (category && categoryLabels[category]) {
+    currentFilters.category = category;
+    
+    // Update UI
+    const categoryLabel = document.getElementById('categoryLabel');
+    if (categoryLabel) {
+      categoryLabel.textContent = categoryLabels[category];
+    }
+    
+    // Update menu selection
+    const menu = document.getElementById('categoryMenu');
+    if (menu) {
+      menu.querySelectorAll('.filter-option').forEach(opt => {
+        opt.classList.toggle('active', opt.dataset.value === category);
+      });
+    }
+  }
+  
+  // Check for type parameter
+  const type = urlParams.get('type');
+  if (type) {
+    currentFilters.type = type;
+    const typeLabel = document.getElementById('typeLabel');
+    if (typeLabel) {
+      const typeNames = { 'book': 'Libros', 'pdf': 'PDFs', 'video': 'Videos', 'article': 'Artículos', 'documentation': 'Documentación' };
+      typeLabel.textContent = typeNames[type] || type;
+    }
+  }
+  
+  // Check for search parameter
+  const search = urlParams.get('search');
+  if (search) {
+    currentFilters.search = search;
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+      searchInput.value = search;
+      document.getElementById('clearSearch').style.display = 'block';
+    }
+  }
 }
 
 async function loadCategoriesFromDB() {

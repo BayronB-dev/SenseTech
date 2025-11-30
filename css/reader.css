@@ -555,6 +555,7 @@ body {
 .pdf-viewer {
   height: 100%;
   overflow: auto;
+  overflow-x: hidden;
 }
 
 .pdf-container {
@@ -563,12 +564,17 @@ body {
   align-items: center;
   padding: var(--space-lg);
   gap: var(--space-md);
+  min-height: min-content;
 }
 
 .pdf-page {
   background: white;
   box-shadow: var(--shadow-lg);
   border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  overflow: hidden;
+  width: auto !important;
+  height: auto !important;
 }
 
 .pdf-page canvas {
@@ -658,6 +664,12 @@ body.fullscreen .reader-sidebar {
   .reader-toolbar {
     padding: 0 var(--space-sm);
     gap: var(--space-sm);
+    height: 48px;
+  }
+
+  .reader-container {
+    height: calc(100vh - 48px);
+    margin-top: 48px;
   }
 
   .toolbar-center {
@@ -679,10 +691,33 @@ body.fullscreen .reader-sidebar {
     bottom: 0;
     z-index: 50;
     box-shadow: var(--shadow-xl);
+    width: 260px;
   }
 
   .reader-sidebar.collapsed {
     transform: translateX(-100%);
+  }
+
+  /* Mobile PDF container with better padding */
+  .pdf-container {
+    padding: var(--space-md);
+    gap: var(--space-md);
+    padding-bottom: 80px; /* Space for floating navigation */
+  }
+
+  .pdf-page {
+    width: auto !important;
+    height: auto !important;
+    max-width: calc(100vw - var(--space-lg) * 2);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    background: white;
+  }
+
+  .pdf-page canvas {
+    display: block;
+    max-width: 100%;
+    height: auto !important;
   }
 
   .zoom-controls {
@@ -690,11 +725,45 @@ body.fullscreen .reader-sidebar {
   }
 
   .progress-indicator {
-    display: none;
+    display: flex;
+  }
+
+  .progress-ring {
+    width: 28px;
+    height: 28px;
+  }
+
+  .progress-text {
+    font-size: 7px;
   }
 
   .tts-btn {
-    display: none;
+    display: flex;
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Mobile page navigation */
+  .page-navigation {
+    position: fixed;
+    bottom: var(--space-md);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-full);
+    padding: var(--space-xs) var(--space-sm);
+    z-index: 50;
+    display: flex !important;
+  }
+
+  .page-info input {
+    width: 40px;
+  }
+
+  /* Video viewer mobile */
+  .video-viewer video {
+    width: 100%;
   }
 }
 

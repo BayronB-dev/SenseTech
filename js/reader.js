@@ -3,8 +3,8 @@
  * PDF viewer with progress tracking, bookmarks, and sync with user progress
  */
 
-// PDF.js configuration
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+// PDF.js will be loaded dynamically
+let pdfjsLib = null;
 
 // State
 let currentUser = null;
@@ -21,8 +21,33 @@ let renderedPages = new Set();
 let isRendering = false;
 
 // UI State
-let sidebarOpen = true;
+let sidebarOpen = window.innerWidth > 768; // Closed by default on mobile
 let isFullscreen = false;
+
+// ========================================
+// PDF.JS LOADER
+// ========================================
+
+async function loadPdfJs() {
+  return new Promise((resolve, reject) => {
+    if (window.pdfjsLib) {
+      pdfjsLib = window.pdfjsLib;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve();
+      return;
+    }
+    
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = () => {
+      pdfjsLib = window.pdfjsLib;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      resolve();
+    };
+    script.onerror = () => reject(new Error('Failed to load PDF.js'));
+    document.head.appendChild(script);
+  });
+}
 
 // ========================================
 // INITIALIZATION
@@ -33,17 +58,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function initReader() {
-  // Check authentication
-  const { user, profile } = await getCurrentUserWithProfile();
+  // Initialize theme first (doesn't require auth)
+  initTheme();
   
-  if (!user) {
-    window.location.href = 'login.html';
-    return;
-  }
-  
-  currentUser = user;
-  
-  // Get resource ID from URL
+  // Get resource ID from URL first
   const resourceId = window.location.hash.slice(1) || new URLSearchParams(window.location.search).get('id');
   
   if (!resourceId) {
@@ -51,20 +69,72 @@ async function initReader() {
     return;
   }
   
-  // Load resource data
-  await loadResource(resourceId);
+  // Check authentication with retry
+  let authAttempts = 0;
+  let user = null;
   
-  // Initialize UI
+  while (authAttempts < 3 && !user) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        user = session.user;
+      } else {
+        authAttempts++;
+        if (authAttempts < 3) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+      }
+    } catch (error) {
+      console.error('Auth attempt failed:', error);
+      authAttempts++;
+      if (authAttempts < 3) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+  }
+  
+  if (!user) {
+    // Store current URL to redirect back after login
+    sessionStorage.setItem('redirectAfterLogin', window.location.href);
+    window.location.href = 'login.html';
+    return;
+  }
+  
+  currentUser = user;
+  
+  // Initialize UI controls (don't depend on resource data)
   initToolbar();
   initSidebar();
   initKeyboardShortcuts();
-  initTheme();
+  
+  // Load resource data
+  await loadResource(resourceId);
   
   // Auto-save progress periodically
   setInterval(saveProgress, 30000); // Every 30 seconds
   
   // Save progress on page unload
-  window.addEventListener('beforeunload', saveProgress);
+  window.addEventListener('beforeunload', () => {
+    // Use sendBeacon for reliable save on page close
+    if (currentResource && userProgress) {
+      const progress = totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0;
+      const data = JSON.stringify({
+        progress: progress,
+        last_page: currentPage,
+        last_read_at: new Date().toISOString()
+      });
+      
+      // Try to save synchronously
+      saveProgress();
+    }
+  });
+  
+  // Also save on visibility change (tab switch, minimize)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      saveProgress();
+    }
+  });
 }
 
 // ========================================
@@ -128,6 +198,7 @@ async function loadUserProgress(resourceId) {
     if (data) {
       userProgress = data;
       currentPage = data.last_page || 1;
+      console.log('Loaded progress:', { last_page: data.last_page, progress: data.progress, currentPage });
       updateProgressUI(data.progress || 0);
     } else {
       // Create initial progress record
@@ -187,6 +258,11 @@ async function loadPDF(resource) {
   document.getElementById('pageNavigation').style.display = 'flex';
   
   try {
+    // Load PDF.js library if not already loaded
+    if (!pdfjsLib) {
+      await loadPdfJs();
+    }
+    
     const loadingTask = pdfjsLib.getDocument(fileUrl);
     
     loadingTask.onProgress = (progress) => {
@@ -212,12 +288,27 @@ async function loadPDF(resource) {
     // Generate thumbnails
     generateThumbnails();
     
-    // Render initial pages
-    await renderVisiblePages();
+    // Render all pages for proper scroll size
+    await renderAllPages();
     
-    // Go to last read page
+    // Update page input with current page
+    document.getElementById('currentPageInput').value = currentPage;
+    
+    // Go to last read page after a short delay to ensure rendering is complete
     if (currentPage > 1) {
-      goToPage(currentPage);
+      setTimeout(() => {
+        const pageDiv = document.getElementById(`page-${currentPage}`);
+        const viewer = document.getElementById('pdfViewer');
+        if (pageDiv && viewer) {
+          const containerTop = document.getElementById('pdfContainer').offsetTop;
+          const pageTop = pageDiv.offsetTop;
+          viewer.scrollTo({
+            top: pageTop - containerTop,
+            behavior: 'instant'
+          });
+        }
+        updateProgress();
+      }, 100);
     }
     
     // Setup scroll listener for progress tracking
@@ -230,6 +321,26 @@ async function loadPDF(resource) {
   }
 }
 
+async function renderAllPages() {
+  const container = document.getElementById('pdfContainer');
+  container.innerHTML = '';
+  renderedPages.clear();
+  
+  // Create all page containers
+  for (let i = 1; i <= totalPages; i++) {
+    const pageDiv = document.createElement('div');
+    pageDiv.className = 'pdf-page';
+    pageDiv.id = `page-${i}`;
+    pageDiv.dataset.pageNum = i;
+    container.appendChild(pageDiv);
+  }
+  
+  // Render all pages
+  for (let i = 1; i <= totalPages; i++) {
+    await renderPage(i);
+  }
+}
+
 async function renderVisiblePages() {
   if (isRendering) return;
   isRendering = true;
@@ -237,23 +348,14 @@ async function renderVisiblePages() {
   const container = document.getElementById('pdfContainer');
   const viewer = document.getElementById('pdfViewer');
   
-  // Clear container if empty
-  if (container.children.length === 0) {
-    for (let i = 1; i <= totalPages; i++) {
-      const pageDiv = document.createElement('div');
-      pageDiv.className = 'pdf-page';
-      pageDiv.id = `page-${i}`;
-      pageDiv.dataset.pageNum = i;
-      container.appendChild(pageDiv);
-    }
-  }
-  
   // Determine visible pages
   const viewerRect = viewer.getBoundingClientRect();
-  const buffer = viewerRect.height; // Render one screen ahead/behind
+  const buffer = viewerRect.height * 2; // Render two screens ahead/behind
   
   for (let i = 1; i <= totalPages; i++) {
     const pageDiv = document.getElementById(`page-${i}`);
+    if (!pageDiv) continue;
+    
     const pageRect = pageDiv.getBoundingClientRect();
     
     const isVisible = pageRect.bottom > viewerRect.top - buffer && 
@@ -283,8 +385,7 @@ async function renderPage(pageNum) {
   canvas.width = viewport.width;
   
   pageDiv.appendChild(canvas);
-  pageDiv.style.width = viewport.width + 'px';
-  pageDiv.style.height = viewport.height + 'px';
+  // Don't set fixed dimensions on pageDiv - let it size to canvas
   
   await page.render({
     canvasContext: context,
@@ -295,10 +396,39 @@ async function renderPage(pageNum) {
 }
 
 async function reRenderAllPages() {
+  const savedPage = currentPage;
+  
   renderedPages.clear();
   const container = document.getElementById('pdfContainer');
   container.innerHTML = '';
-  await renderVisiblePages();
+  
+  // Render all pages completely
+  for (let i = 1; i <= totalPages; i++) {
+    const pageDiv = document.createElement('div');
+    pageDiv.className = 'pdf-page';
+    pageDiv.id = `page-${i}`;
+    pageDiv.dataset.pageNum = i;
+    container.appendChild(pageDiv);
+  }
+  
+  // Render all pages
+  for (let i = 1; i <= totalPages; i++) {
+    await renderPage(i);
+  }
+  
+  // Restore position to saved page
+  setTimeout(() => {
+    const pageDiv = document.getElementById(`page-${savedPage}`);
+    const viewer = document.getElementById('pdfViewer');
+    if (pageDiv && viewer) {
+      const containerTop = document.getElementById('pdfContainer').offsetTop;
+      const pageTop = pageDiv.offsetTop;
+      viewer.scrollTo({
+        top: pageTop - containerTop,
+        behavior: 'instant'
+      });
+    }
+  }, 50);
 }
 
 function goToPage(pageNum) {
@@ -308,12 +438,20 @@ function goToPage(pageNum) {
   document.getElementById('currentPageInput').value = pageNum;
   
   const pageDiv = document.getElementById(`page-${pageNum}`);
-  if (pageDiv) {
-    pageDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const viewer = document.getElementById('pdfViewer');
+  
+  if (pageDiv && viewer) {
+    // Calculate scroll position manually to account for container padding
+    const containerTop = document.getElementById('pdfContainer').offsetTop;
+    const pageTop = pageDiv.offsetTop;
+    viewer.scrollTo({
+      top: pageTop - containerTop,
+      behavior: 'smooth'
+    });
   }
   
   updateThumbnailSelection();
-  renderVisiblePages();
+  updateProgress();
 }
 
 function handleScroll() {
@@ -504,6 +642,9 @@ function loadArticle(resource) {
 // PROGRESS TRACKING
 // ========================================
 
+// Debounce timer for saving progress
+let saveProgressTimeout = null;
+
 function updateProgress(customProgress = null) {
   let progress;
   
@@ -516,6 +657,14 @@ function updateProgress(customProgress = null) {
   }
   
   updateProgressUI(progress);
+  
+  // Debounced save - save after 2 seconds of no changes
+  if (saveProgressTimeout) {
+    clearTimeout(saveProgressTimeout);
+  }
+  saveProgressTimeout = setTimeout(() => {
+    saveProgress();
+  }, 2000);
 }
 
 function updateProgressUI(progress) {
@@ -544,12 +693,16 @@ async function saveProgress() {
       updateData.last_position = video.currentTime;
     }
     
-    await supabase
+    const { error } = await supabase
       .from('user_progress')
       .update(updateData)
       .eq('id', userProgress.id);
     
-    console.log('Progress saved:', progress + '%');
+    if (error) {
+      console.error('Error updating progress:', error);
+    } else {
+      console.log('Progress saved:', { progress: progress + '%', last_page: currentPage });
+    }
   } catch (error) {
     console.error('Error saving progress:', error);
   }
@@ -670,7 +823,6 @@ function initToolbar() {
   // Zoom controls
   document.getElementById('zoomIn').addEventListener('click', () => setZoom(scale + 0.25));
   document.getElementById('zoomOut').addEventListener('click', () => setZoom(scale - 0.25));
-  document.getElementById('zoomFit').addEventListener('click', fitToWidth);
   
   // Bookmarks
   document.getElementById('bookmarkBtn').addEventListener('click', openBookmarkModal);
@@ -697,20 +849,6 @@ function setZoom(newScale) {
   scale = Math.max(0.5, Math.min(3, newScale));
   document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
   reRenderAllPages();
-}
-
-function fitToWidth() {
-  const viewer = document.getElementById('pdfViewer');
-  const viewerWidth = viewer.clientWidth - 48; // Padding
-  
-  if (pdfDoc) {
-    pdfDoc.getPage(1).then(page => {
-      const viewport = page.getViewport({ scale: 1 });
-      scale = viewerWidth / viewport.width;
-      document.getElementById('zoomLevel').textContent = Math.round(scale * 100) + '%';
-      reRenderAllPages();
-    });
-  }
 }
 
 function toggleSidebar() {
@@ -743,6 +881,18 @@ function toggleFullscreen() {
 // ========================================
 
 function initSidebar() {
+  const sidebar = document.getElementById('readerSidebar');
+  const btn = document.getElementById('sidebarToggle');
+  
+  // Set initial state based on screen size
+  if (!sidebarOpen) {
+    sidebar.classList.add('collapsed');
+    btn.classList.remove('active');
+  } else {
+    sidebar.classList.remove('collapsed');
+    btn.classList.add('active');
+  }
+  
   const tabs = document.querySelectorAll('.sidebar-tab');
   
   tabs.forEach(tab => {
@@ -799,7 +949,8 @@ function initKeyboardShortcuts() {
         e.preventDefault();
         break;
       case '0':
-        fitToWidth();
+        // Reset zoom to 100%
+        setZoom(1);
         e.preventDefault();
         break;
       case 'b':

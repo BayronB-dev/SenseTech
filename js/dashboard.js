@@ -199,16 +199,8 @@ const typeConfig = {
   'documentation': { label: 'Documentación', icon: '📋' }
 };
 
-const categoryConfig = {
-  'programming': { label: 'Programación', icon: '💻' },
-  'databases': { label: 'Bases de Datos', icon: '🗄️' },
-  'networks': { label: 'Redes', icon: '🌐' },
-  'software-engineering': { label: 'Ingeniería de Software', icon: '⚙️' },
-  'ai-ml': { label: 'IA & Machine Learning', icon: '🤖' },
-  'security': { label: 'Seguridad', icon: '🔒' },
-  'devops': { label: 'DevOps', icon: '🚀' },
-  'other': { label: 'Otros', icon: '📁' }
-};
+// Categories will be loaded from database
+let categoryConfig = {};
 
 async function loadFeaturedResources() {
   const container = document.getElementById('featuredResourcesGrid');
@@ -259,11 +251,24 @@ async function loadCategories() {
   if (!container) return;
   
   try {
+    // Load categories from database
+    const { data: dbCategories } = await supabase
+      .from('categories')
+      .select('*')
+      .order('name');
+    
+    // Build categoryConfig from database
+    if (dbCategories && dbCategories.length > 0) {
+      dbCategories.forEach(cat => {
+        categoryConfig[cat.slug] = { label: cat.name, icon: cat.icon || '📁' };
+      });
+    }
+    
+    // Count resources per category
     const { data: resources } = await supabase
       .from('resources')
       .select('category');
     
-    // Count resources per category
     const counts = {};
     (resources || []).forEach(r => {
       if (r.category) {
@@ -271,10 +276,22 @@ async function loadCategories() {
       }
     });
     
-    const categories = Object.entries(categoryConfig).filter(([key]) => counts[key] > 0 || key !== 'other');
+    // Filter categories with resources
+    const categoriesWithResources = Object.entries(categoryConfig)
+      .filter(([key]) => counts[key] > 0)
+      .sort((a, b) => (counts[b[0]] || 0) - (counts[a[0]] || 0));
     
-    container.innerHTML = categories.slice(0, 6).map(([key, config]) => `
-      <a href="library.html?category=${key}" class="category-card hover-lift">
+    if (categoriesWithResources.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state-small" style="grid-column: 1/-1;">
+          <p>No hay categorías disponibles</p>
+        </div>
+      `;
+      return;
+    }
+    
+    container.innerHTML = categoriesWithResources.slice(0, 6).map(([key, config]) => `
+      <a href="library.html?category=${key}" class="category-card hover-lift" data-category="${key}">
         <div class="category-icon">${config.icon}</div>
         <h6>${config.label}</h6>
         <small>${counts[key] || 0} recursos</small>
@@ -307,9 +324,11 @@ async function loadUserProgress() {
     
     const progress = progressData || [];
     
-    // Calculate stats
-    const inProgress = progress.filter(p => p.progress_percentage > 0 && p.progress_percentage < 100).length;
-    const completed = progress.filter(p => p.progress_percentage === 100).length;
+    // Calculate stats (handle both progress and progress_percentage fields)
+    const getProgress = (p) => p.progress ?? p.progress_percentage ?? 0;
+    
+    const inProgress = progress.filter(p => getProgress(p) > 0 && getProgress(p) < 100).length;
+    const completed = progress.filter(p => getProgress(p) >= 100).length;
     const favorites = progress.filter(p => p.is_favorite).length;
     
     // Update stats UI
@@ -318,8 +337,11 @@ async function loadUserProgress() {
     document.getElementById('statFavorites').textContent = favorites;
     document.getElementById('statTotalResources').textContent = totalResources || 0;
     
-    // Render continue reading
-    renderContinueReading(progress.filter(p => p.progress_percentage > 0 && p.progress_percentage < 100));
+    // Render continue reading (sort by last read)
+    const continueItems = progress
+      .filter(p => getProgress(p) > 0 && getProgress(p) < 100)
+      .sort((a, b) => new Date(b.last_read_at || b.updated_at || 0) - new Date(a.last_read_at || a.updated_at || 0));
+    renderContinueReading(continueItems);
     
     // Render favorites
     renderFavorites(progress.filter(p => p.is_favorite));
@@ -343,18 +365,21 @@ function renderContinueReading(progressItems) {
     return;
   }
   
-  container.innerHTML = progressItems.slice(0, 2).map(item => {
+  const getProgress = (p) => p.progress ?? p.progress_percentage ?? 0;
+  
+  container.innerHTML = progressItems.slice(0, 3).map(item => {
     const resource = item.resources;
-    const typeInfo = typeConfig[resource?.type] || { icon: '📁' };
+    const typeInfo = typeConfig[resource?.type] || { icon: '📁', label: 'Recurso' };
+    const progressValue = getProgress(item);
     return `
       <a href="resource.html#${item.resource_id}" class="continue-card hover-lift">
-        <div class="continue-image">${typeInfo.icon}</div>
+        <div class="continue-image">${resource?.cover_url ? `<img src="${resource.cover_url}" alt="">` : typeInfo.icon}</div>
         <div class="continue-info">
-          <span class="resource-type">${typeInfo.label || 'Recurso'}</span>
+          <span class="resource-type">${typeInfo.label}</span>
           <h5>${resource?.title || 'Recurso'}</h5>
-          <p class="progress-text">${item.progress_percentage}% completado</p>
+          <p class="progress-text">${progressValue}% completado</p>
           <div class="progress-bar">
-            <div class="progress-fill" style="width: ${item.progress_percentage}%;"></div>
+            <div class="progress-fill" style="width: ${progressValue}%;"></div>
           </div>
         </div>
       </a>
