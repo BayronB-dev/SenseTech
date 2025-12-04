@@ -24,6 +24,11 @@ let isRendering = false;
 let sidebarOpen = window.innerWidth > 768; // Closed by default on mobile
 let isFullscreen = false;
 
+// Time tracking
+let sessionStartTime = null;
+let totalSessionMinutes = 0;
+let timeTrackingInterval = null;
+
 // ========================================
 // PDF.JS LOADER
 // ========================================
@@ -199,7 +204,7 @@ async function loadUserProgress(resourceId) {
     if (data) {
       userProgress = data;
       currentPage = data.last_page || 1;
-      console.log('Loaded progress:', { last_page: data.last_page, progress: data.progress, currentPage });
+      console.log('Loaded progress:', { last_page: data.last_page, progress: data.progress, reading_time: data.reading_time });
       updateProgressUI(data.progress || 0);
     } else {
       // Create initial progress record
@@ -210,7 +215,9 @@ async function loadUserProgress(resourceId) {
           resource_id: parseInt(resourceId),
           progress: 0,
           last_page: 1,
-          has_viewed: true
+          has_viewed: true,
+          reading_time: 0,
+          last_read_at: new Date().toISOString()
         })
         .select()
         .single();
@@ -315,6 +322,9 @@ async function loadPDF(resource) {
     // Setup scroll listener for progress tracking
     const pdfViewer = document.getElementById('pdfViewer');
     pdfViewer.addEventListener('scroll', handleScroll);
+    
+    // Start time tracking for PDFs
+    startTimeTracking();
     
   } catch (error) {
     console.error('Error loading PDF:', error);
@@ -501,11 +511,39 @@ async function loadOutline() {
   }
 }
 
+function decodeOutlineText(text) {
+  if (!text) return '';
+  
+  // Try to fix double-encoded UTF-8 (common in PDFs with Spanish)
+  // This happens when UTF-8 bytes are interpreted as Latin-1
+  try {
+    // Check if text looks like it has encoding issues
+    if (text.includes('\u00c3') || text.includes('\u00c2')) {
+      // Convert string to bytes treating each char as a byte value
+      const bytes = new Uint8Array(text.length);
+      for (let i = 0; i < text.length; i++) {
+        bytes[i] = text.charCodeAt(i) & 0xff;
+      }
+      // Decode as UTF-8
+      const decoder = new TextDecoder('utf-8', { fatal: false });
+      const decoded = decoder.decode(bytes);
+      // Only use if it doesn't have replacement characters and looks better
+      if (!decoded.includes('\ufffd')) {
+        return decoded;
+      }
+    }
+  } catch (e) {
+    // Keep original if decoding fails
+  }
+  
+  return text;
+}
+
 function renderOutlineItems(items, container, level) {
   items.forEach(item => {
     const li = document.createElement('li');
     li.className = `outline-item level-${level}`;
-    li.textContent = item.title;
+    li.textContent = decodeOutlineText(item.title);
     li.addEventListener('click', async () => {
       if (item.dest) {
         const dest = typeof item.dest === 'string' 
@@ -578,10 +616,15 @@ function updateThumbnailSelection() {
 // VIDEO VIEWER
 // ========================================
 
+let videoTimeTracker = null;
+
 function loadVideo(resource) {
   document.getElementById('readerLoading').style.display = 'none';
   document.getElementById('pageNavigation').style.display = 'none';
   document.getElementById('videoViewer').style.display = 'flex';
+  
+  // Hide PDF-specific UI elements for video
+  hideElementsForVideo();
   
   const video = document.getElementById('videoPlayer');
   const source = document.getElementById('videoSource');
@@ -595,7 +638,31 @@ function loadVideo(resource) {
       if (video.duration) {
         const progress = Math.round((video.currentTime / video.duration) * 100);
         updateProgress(progress);
+        
+        // Save position periodically
+        saveVideoPosition(video.currentTime);
       }
+    });
+    
+    // Track watch time for activity
+    video.addEventListener('play', () => {
+      startVideoTimeTracking();
+    });
+    
+    video.addEventListener('pause', () => {
+      stopVideoTimeTracking();
+      // Save progress immediately when paused
+      if (video.duration) {
+        const progress = Math.round((video.currentTime / video.duration) * 100);
+        saveProgress(progress);
+      }
+    });
+    
+    video.addEventListener('ended', () => {
+      stopVideoTimeTracking();
+      // Mark as 100% complete and save immediately
+      saveProgress(100);
+      updateProgressUI(100);
     });
     
     // Resume from last position
@@ -607,6 +674,171 @@ function loadVideo(resource) {
     document.getElementById('videoViewer').style.display = 'none';
     loadArticle(resource);
   }
+}
+
+function hideElementsForVideo() {
+  // Hide sidebar (no index/thumbnails for video)
+  const sidebar = document.getElementById('readerSidebar');
+  if (sidebar) {
+    sidebar.style.display = 'none';
+  }
+  
+  // Hide sidebar toggle button
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  if (sidebarToggle) {
+    sidebarToggle.style.display = 'none';
+  }
+  
+  // Hide TTS button (not applicable for video)
+  const ttsBtn = document.getElementById('ttsBtn');
+  if (ttsBtn) {
+    ttsBtn.style.display = 'none';
+  }
+  
+  // Hide bookmark button (not applicable for video)
+  const bookmarkBtn = document.getElementById('bookmarkBtn');
+  if (bookmarkBtn) {
+    bookmarkBtn.style.display = 'none';
+  }
+  
+  // Hide zoom controls (not applicable for video)
+  const zoomControls = document.querySelector('.zoom-controls');
+  if (zoomControls) {
+    zoomControls.style.display = 'none';
+  }
+  
+  // Expand main viewer to full width
+  const readerMain = document.getElementById('readerMain');
+  if (readerMain) {
+    readerMain.style.marginLeft = '0';
+  }
+}
+
+let videoPositionSaveTimeout = null;
+function saveVideoPosition(position) {
+  // Debounce saving position
+  if (videoPositionSaveTimeout) {
+    clearTimeout(videoPositionSaveTimeout);
+  }
+  
+  videoPositionSaveTimeout = setTimeout(async () => {
+    if (!currentUser || !currentResource || !userProgress) return;
+    
+    try {
+      await supabase
+        .from('user_progress')
+        .update({ last_position: position })
+        .eq('user_id', currentUser.id)
+        .eq('resource_id', currentResource.id);
+    } catch (error) {
+      console.error('Error saving video position:', error);
+    }
+  }, 5000); // Save every 5 seconds max
+}
+
+function startVideoTimeTracking() {
+  startTimeTracking();
+}
+
+function stopVideoTimeTracking() {
+  // Don't stop completely, just pause for video
+}
+
+// ========================================
+// TIME TRACKING (for all resource types)
+// ========================================
+
+function startTimeTracking() {
+  if (sessionStartTime) return; // Already tracking
+  
+  sessionStartTime = Date.now();
+  console.log('Time tracking started');
+  
+  // Save initial activity immediately (marks as accessed today)
+  saveReadingTime();
+  
+  // Update reading time every minute
+  timeTrackingInterval = setInterval(() => {
+    totalSessionMinutes++;
+    saveReadingTime();
+  }, 60000); // Every minute
+  
+  // Also track on visibility change
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  
+  // Save on page unload
+  window.addEventListener('beforeunload', saveReadingTimeSync);
+}
+
+function handleVisibilityChange() {
+  if (document.hidden) {
+    // Page hidden - save current time
+    saveReadingTime();
+  }
+}
+
+async function saveReadingTime() {
+  if (!currentUser || !currentResource || !userProgress) return;
+  
+  try {
+    // Get current reading_time and add 1 minute
+    const currentReadingTime = userProgress.reading_time || 0;
+    const newReadingTime = currentReadingTime + 1;
+    
+    const { error } = await supabase
+      .from('user_progress')
+      .update({ 
+        reading_time: newReadingTime,
+        last_read_at: new Date().toISOString()
+      })
+      .eq('id', userProgress.id);
+    
+    if (error) {
+      console.error('Error updating reading time:', error);
+    } else {
+      console.log('Reading time saved:', newReadingTime, 'minutes');
+      // Update local state
+      userProgress.reading_time = newReadingTime;
+    }
+    
+  } catch (error) {
+    console.error('Error saving reading time:', error);
+  }
+}
+
+function saveReadingTimeSync() {
+  // Synchronous save for beforeunload
+  if (!currentUser || !currentResource || !userProgress) return;
+  
+  const elapsed = sessionStartTime ? Math.floor((Date.now() - sessionStartTime) / 60000) : 0;
+  if (elapsed === 0) return;
+  
+  // Use sendBeacon for reliable save on page close
+  const data = JSON.stringify({
+    reading_time: (userProgress.reading_time || 0) + elapsed
+  });
+  
+  // Note: This is a simplified approach - in production you'd use a proper endpoint
+  navigator.sendBeacon && navigator.sendBeacon('/api/save-time', data);
+}
+
+function stopTimeTracking() {
+  if (timeTrackingInterval) {
+    clearInterval(timeTrackingInterval);
+    timeTrackingInterval = null;
+  }
+  
+  // Save final time
+  if (sessionStartTime) {
+    const elapsed = Math.floor((Date.now() - sessionStartTime) / 60000);
+    if (elapsed > 0) {
+      saveReadingTime();
+    }
+    sessionStartTime = null;
+  }
+  
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  window.removeEventListener('beforeunload', saveReadingTimeSync);
 }
 
 // ========================================
@@ -647,6 +879,7 @@ function loadArticle(resource) {
 
 // Debounce timer for saving progress
 let saveProgressTimeout = null;
+let lastSavedProgress = 0;
 
 function updateProgress(customProgress = null) {
   let progress;
@@ -661,12 +894,15 @@ function updateProgress(customProgress = null) {
   
   updateProgressUI(progress);
   
+  // Store the current progress for saving
+  lastSavedProgress = progress;
+  
   // Debounced save - save after 2 seconds of no changes
   if (saveProgressTimeout) {
     clearTimeout(saveProgressTimeout);
   }
   saveProgressTimeout = setTimeout(() => {
-    saveProgress();
+    saveProgress(progress);
   }, 2000);
 }
 
@@ -678,21 +914,33 @@ function updateProgressUI(progress) {
   text.textContent = `${progress}%`;
 }
 
-async function saveProgress() {
+async function saveProgress(progressOverride = null) {
   if (!currentResource || !userProgress) return;
   
-  const progress = totalPages > 0 ? Math.round((currentPage / totalPages) * 100) : 0;
+  // Use override if provided (for videos), otherwise calculate from pages
+  let progress;
+  if (progressOverride !== null) {
+    progress = progressOverride;
+  } else if (totalPages > 0) {
+    progress = Math.round((currentPage / totalPages) * 100);
+  } else {
+    progress = lastSavedProgress;
+  }
   
   try {
     const updateData = {
       progress: progress,
-      last_page: currentPage,
       last_read_at: new Date().toISOString()
     };
     
-    // For videos, also save position
+    // For PDFs, save page number
+    if (totalPages > 0) {
+      updateData.last_page = currentPage;
+    }
+    
+    // For videos, save position
     const video = document.getElementById('videoPlayer');
-    if (video && !video.paused) {
+    if (video && video.duration) {
       updateData.last_position = video.currentTime;
     }
     
@@ -704,7 +952,9 @@ async function saveProgress() {
     if (error) {
       console.error('Error updating progress:', error);
     } else {
-      console.log('Progress saved:', { progress: progress + '%', last_page: currentPage });
+      console.log('Progress saved:', { progress: progress + '%' });
+      // Update local state
+      userProgress.progress = progress;
     }
   } catch (error) {
     console.error('Error saving progress:', error);

@@ -20,14 +20,79 @@ let currentView = 'grid';
 let currentUser = null;
 let userFavorites = [];
 
-// Type labels and icons
-const typeConfig = {
+// Type config (loaded from database)
+let typeLabels = {};
+let typeIcons = {};
+let allTypes = [];
+
+// Fallback type config
+const defaultTypeConfig = {
   'book': { label: 'Libro', icon: '📕' },
   'pdf': { label: 'PDF', icon: '📄' },
   'video': { label: 'Video', icon: '🎬' },
   'article': { label: 'Artículo', icon: '📰' },
-  'documentation': { label: 'Documentación', icon: '📋' }
+  'documentation': { label: 'Documentación', icon: '📋' },
+  'link': { label: 'Enlace', icon: '🔗' }
 };
+
+// Dynamic typeConfig getter
+function getTypeConfig(slug) {
+  if (typeLabels[slug]) {
+    return { label: typeLabels[slug], icon: typeIcons[slug] || '📁' };
+  }
+  return defaultTypeConfig[slug] || { label: 'Recurso', icon: '📁' };
+}
+
+// Load types from database
+async function loadTypesFromDB() {
+  try {
+    const { data, error } = await supabase
+      .from('resource_types')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    
+    allTypes = data || [];
+    allTypes.forEach(type => {
+      typeLabels[type.slug] = type.name;
+      typeIcons[type.slug] = type.icon || '📁';
+    });
+    
+    // Update type filter menu
+    updateTypeFilterMenu();
+  } catch (error) {
+    console.error('Error loading types:', error);
+  }
+}
+
+function updateTypeFilterMenu() {
+  const menu = document.getElementById('typeMenu');
+  if (!menu) return;
+  
+  menu.innerHTML = '<button class="filter-option active" data-value="">Todos</button>';
+  
+  allTypes.forEach(type => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-option';
+    btn.dataset.value = type.slug;
+    btn.textContent = `${type.icon || '📁'} ${type.name}`;
+    menu.appendChild(btn);
+  });
+  
+  // Re-attach event listeners
+  menu.querySelectorAll('.filter-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      menu.querySelectorAll('.filter-option').forEach(o => o.classList.remove('active'));
+      opt.classList.add('active');
+      currentFilters.type = opt.dataset.value;
+      document.getElementById('typeLabel').textContent = opt.dataset.value ? getTypeConfig(opt.dataset.value).label : 'Tipo';
+      document.getElementById('typeBtn').setAttribute('aria-expanded', 'false');
+      menu.classList.remove('active');
+      applyFilters();
+    });
+  });
+}
 
 // ========================================
 // INITIALIZATION
@@ -55,8 +120,11 @@ async function initLibrary() {
   // Update user display
   updateUserDisplay(profile);
   
-  // Load categories from database
-  await loadCategoriesFromDB();
+  // Load categories and types from database
+  await Promise.all([
+    loadCategoriesFromDB(),
+    loadTypesFromDB()
+  ]);
   
   // Check URL for category filter
   applyUrlFilters();
@@ -184,9 +252,12 @@ function updateCategoryFilterOptions() {
       currentPage = 1;
       applyFilters();
       
-      // Close dropdown
-      menu.parentElement.querySelector('.filter-btn')?.setAttribute('aria-expanded', 'false');
-      menu.style.display = 'none';
+      // Close dropdown properly using class
+      const dropdown = menu.closest('.filter-dropdown');
+      if (dropdown) {
+        dropdown.classList.remove('open');
+        dropdown.querySelector('.filter-btn')?.setAttribute('aria-expanded', 'false');
+      }
     });
   });
 }
@@ -308,6 +379,9 @@ async function loadResources() {
     
     allResources = data || [];
     
+    // Load average ratings for all resources
+    await loadResourceRatings();
+    
     // Update stats
     updateStats();
     
@@ -318,6 +392,47 @@ async function loadResources() {
     showEmptyState(true, 'Error al cargar los recursos');
   } finally {
     showLoading(false);
+  }
+}
+
+// Store ratings by resource ID
+let resourceRatings = {};
+
+async function loadResourceRatings() {
+  try {
+    // Get all ratings grouped by resource
+    const { data, error } = await supabase
+      .from('user_progress')
+      .select('resource_id, rating')
+      .not('rating', 'is', null);
+    
+    if (error) throw error;
+    
+    // Calculate average rating per resource
+    const ratingsByResource = {};
+    
+    data?.forEach(item => {
+      const id = item.resource_id;
+      if (!ratingsByResource[id]) {
+        ratingsByResource[id] = { sum: 0, count: 0 };
+      }
+      ratingsByResource[id].sum += item.rating;
+      ratingsByResource[id].count++;
+    });
+    
+    // Convert to averages
+    resourceRatings = {};
+    Object.keys(ratingsByResource).forEach(id => {
+      const { sum, count } = ratingsByResource[id];
+      resourceRatings[id] = {
+        average: (sum / count).toFixed(1),
+        count: count
+      };
+    });
+    
+  } catch (error) {
+    console.error('Error loading ratings:', error);
+    resourceRatings = {};
   }
 }
 
@@ -512,8 +627,8 @@ function updateActiveFilters() {
   }
   
   if (currentFilters.type) {
-    const typeInfo = typeConfig[currentFilters.type];
-    tags.push({ key: 'type', label: typeInfo ? typeInfo.label : currentFilters.type });
+    const typeInfo = getTypeConfig(currentFilters.type);
+    tags.push({ key: 'type', label: typeInfo.label });
   }
   
   if (tags.length === 0) {
@@ -681,10 +796,15 @@ function renderResources() {
 }
 
 function createResourceCard(resource) {
-  const typeInfo = typeConfig[resource.type] || { label: 'Recurso', icon: '📁' };
+  const typeInfo = getTypeConfig(resource.type);
   const categoryLabel = categoryLabels[resource.category] || resource.category || 'General';
   // Compare as strings to handle both integer and UUID IDs
   const isFavorite = userFavorites.some(id => String(id) === String(resource.id));
+  
+  // Get rating info - show NA if no rating
+  const ratingInfo = resourceRatings[resource.id];
+  const ratingDisplay = ratingInfo ? ratingInfo.average : 'NA';
+  const ratingTitle = ratingInfo ? `${ratingInfo.count} calificaciones` : 'Sin calificaciones';
   
   return `
     <article class="resource-card" data-id="${resource.id}">
@@ -708,6 +828,7 @@ function createResourceCard(resource) {
           <div class="resource-card-stats">
             <span>👁️ ${resource.view_count || 0}</span>
             <span>❤️ ${resource.favorite_count || 0}</span>
+            <span class="resource-rating" title="${ratingTitle}">⭐ ${ratingDisplay}</span>
           </div>
           <button class="resource-card-action">Ver más →</button>
         </div>

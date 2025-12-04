@@ -12,8 +12,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const authenticated = await requireAuthSupabase();
   if (!authenticated) return;
   
-  // Load user data
-  await loadUserData();
+  // Load user data and types
+  await Promise.all([
+    loadUserData(),
+    loadTypesFromDB()
+  ]);
   
   // Initialize dashboard features
   initQuickAccessibility();
@@ -202,22 +205,100 @@ function initQuickAccessibility() {
 // LOAD FEATURED RESOURCES
 // ========================================
 
-const typeConfig = {
+// Type config (loaded from database)
+let typeLabels = {};
+let typeIcons = {};
+
+// Fallback type config
+const defaultTypeConfig = {
   'book': { label: 'Libro', icon: '📕' },
   'pdf': { label: 'PDF', icon: '📄' },
   'video': { label: 'Video', icon: '🎬' },
   'article': { label: 'Artículo', icon: '📰' },
-  'documentation': { label: 'Documentación', icon: '📋' }
+  'documentation': { label: 'Documentación', icon: '📋' },
+  'link': { label: 'Enlace', icon: '🔗' }
 };
+
+// Dynamic typeConfig getter
+function getTypeConfig(slug) {
+  if (typeLabels[slug]) {
+    return { label: typeLabels[slug], icon: typeIcons[slug] || '📁' };
+  }
+  return defaultTypeConfig[slug] || { label: 'Recurso', icon: '📁' };
+}
+
+// Load types from database
+async function loadTypesFromDB() {
+  try {
+    const { data, error } = await supabase
+      .from('resource_types')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    
+    (data || []).forEach(type => {
+      typeLabels[type.slug] = type.name;
+      typeIcons[type.slug] = type.icon || '📁';
+    });
+  } catch (error) {
+    console.error('Error loading types:', error);
+  }
+}
 
 // Categories will be loaded from database
 let categoryConfig = {};
+
+// Store ratings by resource ID
+let resourceRatings = {};
+
+async function loadResourceRatings() {
+  try {
+    const { data, error } = await supabase
+      .from('user_progress')
+      .select('resource_id, rating')
+      .not('rating', 'is', null);
+    
+    if (error) throw error;
+    
+    const ratingsByResource = {};
+    data?.forEach(item => {
+      const id = item.resource_id;
+      if (!ratingsByResource[id]) {
+        ratingsByResource[id] = { sum: 0, count: 0 };
+      }
+      ratingsByResource[id].sum += item.rating;
+      ratingsByResource[id].count++;
+    });
+    
+    resourceRatings = {};
+    Object.keys(ratingsByResource).forEach(id => {
+      const { sum, count } = ratingsByResource[id];
+      resourceRatings[id] = {
+        average: (sum / count).toFixed(1),
+        count: count
+      };
+    });
+  } catch (error) {
+    console.error('Error loading ratings:', error);
+  }
+}
+
+function getRatingHtml(resourceId) {
+  const ratingInfo = resourceRatings[resourceId];
+  const ratingDisplay = ratingInfo ? ratingInfo.average : 'NA';
+  const ratingTitle = ratingInfo ? `${ratingInfo.count} calificaciones` : 'Sin calificaciones';
+  return `<span class="resource-rating" title="${ratingTitle}">⭐ ${ratingDisplay}</span>`;
+}
 
 async function loadFeaturedResources() {
   const container = document.getElementById('featuredResourcesGrid');
   if (!container) return;
   
   try {
+    // Load ratings first
+    await loadResourceRatings();
+    
     const { data: resources, error } = await supabase
       .from('resources')
       .select('*')
@@ -235,17 +316,25 @@ async function loadFeaturedResources() {
     }
     
     container.innerHTML = resources.map(resource => {
-      const typeInfo = typeConfig[resource.type] || { label: 'Recurso', icon: '📁' };
+      const typeInfo = getTypeConfig(resource.type);
       return `
-        <a href="resource.html#${resource.id}" class="card resource-card hover-lift">
-          <div class="resource-image">${typeInfo.icon}</div>
-          <div class="resource-content">
-            <span class="resource-type">${typeInfo.label}</span>
-            <h5>${resource.title}</h5>
-            <p>${resource.description ? resource.description.substring(0, 60) + '...' : ''}</p>
-            <div class="resource-meta">
-              <span>👁️ ${resource.view_count || 0}</span>
-              <span>❤️ ${resource.favorite_count || 0}</span>
+        <a href="resource.html#${resource.id}" class="resource-card hover-lift">
+          <div class="resource-card-image">
+            ${resource.cover_url 
+              ? `<img src="${resource.cover_url}" alt="${resource.title}">`
+              : `<span class="resource-icon">${typeInfo.icon}</span>`
+            }
+            <span class="resource-type-badge">${typeInfo.label}</span>
+          </div>
+          <div class="resource-card-content">
+            <h3 class="resource-card-title">${resource.title}</h3>
+            <p class="resource-card-author">${resource.author || ''}</p>
+            <div class="resource-card-meta">
+              <div class="resource-card-stats">
+                <span>👁️ ${resource.view_count || 0}</span>
+                <span>❤️ ${resource.favorite_count || 0}</span>
+                ${getRatingHtml(resource.id)}
+              </div>
             </div>
           </div>
         </a>
@@ -347,6 +436,19 @@ async function loadUserProgress() {
     const completed = progress.filter(p => getProgress(p) >= 100).length;
     const favorites = progress.filter(p => p.is_favorite).length;
     
+    // Calculate total reading time from all progress entries
+    const totalMinutes = progress.reduce((sum, p) => sum + (p.reading_time || 0), 0);
+    let timeDisplay;
+    if (totalMinutes >= 60) {
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      timeDisplay = mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    } else if (totalMinutes > 0) {
+      timeDisplay = `${totalMinutes}m`;
+    } else {
+      timeDisplay = '0m';
+    }
+    
     // Update stats UI
     const statResourcesRead = document.getElementById('statResourcesRead');
     const statCompleted = document.getElementById('statCompleted');
@@ -356,11 +458,11 @@ async function loadUserProgress() {
     if (statResourcesRead) statResourcesRead.textContent = inProgress;
     if (statCompleted) statCompleted.textContent = completed;
     if (statFavorites) statFavorites.textContent = favorites;
-    if (statReadingTime) statReadingTime.textContent = '0h'; // Will be updated by loadActivityData
+    if (statReadingTime) statReadingTime.textContent = timeDisplay;
     
-    // Render continue reading (sort by last read)
+    // Render continue reading (sort by last read, exclude external links)
     const continueItems = progress
-      .filter(p => getProgress(p) > 0 && getProgress(p) < 100)
+      .filter(p => getProgress(p) > 0 && getProgress(p) < 100 && p.resources?.type !== 'link')
       .sort((a, b) => new Date(b.last_read_at || b.updated_at || 0) - new Date(a.last_read_at || a.updated_at || 0));
     renderContinueReading(continueItems);
     
@@ -393,22 +495,77 @@ function renderContinueReading(progressItems) {
   
   container.innerHTML = progressItems.slice(0, 3).map(item => {
     const resource = item.resources;
-    const typeInfo = typeConfig[resource?.type] || { icon: '📁', label: 'Recurso' };
+    const typeInfo = getTypeConfig(resource?.type);
     const progressValue = getProgress(item);
+    const resourceTitle = (resource?.title || 'Recurso').replace(/'/g, "\\'");
     return `
-      <a href="resource.html#${item.resource_id}" class="continue-card hover-lift">
-        <div class="continue-image">${resource?.cover_url ? `<img src="${resource.cover_url}" alt="">` : typeInfo.icon}</div>
-        <div class="continue-info">
-          <span class="resource-type">${typeInfo.label}</span>
-          <h5>${resource?.title || 'Recurso'}</h5>
-          <p class="progress-text">${progressValue}% completado</p>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${progressValue}%;"></div>
+      <div class="continue-card-wrapper">
+        <a href="resource.html#${item.resource_id}" class="continue-card hover-lift">
+          <div class="continue-image">${resource?.cover_url ? `<img src="${resource.cover_url}" alt="">` : typeInfo.icon}</div>
+          <div class="continue-info">
+            <span class="resource-type">${typeInfo.label}</span>
+            <h5>${resource?.title || 'Recurso'}</h5>
+            <p class="progress-text">${progressValue}% completado</p>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${progressValue}%;"></div>
+            </div>
           </div>
-        </div>
-      </a>
+        </a>
+        <button class="continue-card-remove" onclick="removeFromContinueReading(${item.id}, '${resourceTitle}', event)" title="Quitar de la lista">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
     `;
   }).join('');
+}
+
+let pendingRemoveProgressId = null;
+
+function removeFromContinueReading(progressId, resourceTitle, event) {
+  event.preventDefault();
+  event.stopPropagation();
+  
+  pendingRemoveProgressId = progressId;
+  
+  const modal = document.getElementById('removeResourceModal');
+  const titleEl = document.getElementById('removeResourceTitle');
+  
+  if (titleEl) titleEl.textContent = resourceTitle || 'Este recurso';
+  if (modal) modal.classList.add('active');
+}
+
+function closeRemoveModal() {
+  const modal = document.getElementById('removeResourceModal');
+  if (modal) modal.classList.remove('active');
+  pendingRemoveProgressId = null;
+}
+
+async function confirmRemoveResource() {
+  if (!pendingRemoveProgressId) return;
+  
+  try {
+    // Reset progress to 0 so it no longer appears in continue reading
+    const { error } = await supabase
+      .from('user_progress')
+      .update({ progress: 0, last_page: 1 })
+      .eq('id', pendingRemoveProgressId);
+    
+    if (error) throw error;
+    
+    closeRemoveModal();
+    
+    // Reload all affected sections
+    await Promise.all([
+      loadUserProgress(),  // Updates continue reading and stats
+      loadGoal()           // Updates weekly goal counter
+    ]);
+    
+  } catch (error) {
+    console.error('Error removing from continue reading:', error);
+    closeRemoveModal();
+  }
 }
 
 function renderFavorites(favoriteItems) {
@@ -428,7 +585,7 @@ function renderFavorites(favoriteItems) {
     <div class="favorites-list">
       ${favoriteItems.slice(0, 3).map(item => {
         const resource = item.resources;
-        const typeInfo = typeConfig[resource?.type] || { icon: '📁' };
+        const typeInfo = getTypeConfig(resource?.type);
         return `
           <a href="resource.html#${item.resource_id}" class="favorite-item hover-lift">
             <span class="favorite-icon">${typeInfo.icon}</span>
@@ -530,14 +687,26 @@ async function loadRecommendations() {
     }
     
     container.innerHTML = recommendations.slice(0, 3).map(resource => {
-      const typeInfo = typeConfig[resource.type] || { label: 'Recurso', icon: '📁' };
+      const typeInfo = getTypeConfig(resource.type);
       return `
-        <a href="resource.html#${resource.id}" class="card resource-card hover-lift">
-          <div class="resource-image">${resource.cover_url ? `<img src="${resource.cover_url}" alt="">` : typeInfo.icon}</div>
-          <div class="resource-content">
-            <span class="resource-type">${typeInfo.label}</span>
-            <h5>${resource.title}</h5>
-            <p>${resource.description ? resource.description.substring(0, 50) + '...' : ''}</p>
+        <a href="resource.html#${resource.id}" class="resource-card hover-lift">
+          <div class="resource-card-image">
+            ${resource.cover_url 
+              ? `<img src="${resource.cover_url}" alt="${resource.title}">`
+              : `<span class="resource-icon">${typeInfo.icon}</span>`
+            }
+            <span class="resource-type-badge">${typeInfo.label}</span>
+          </div>
+          <div class="resource-card-content">
+            <h3 class="resource-card-title">${resource.title}</h3>
+            <p class="resource-card-author">${resource.author || ''}</p>
+            <div class="resource-card-meta">
+              <div class="resource-card-stats">
+                <span>👁️ ${resource.view_count || 0}</span>
+                <span>❤️ ${resource.favorite_count || 0}</span>
+                ${getRatingHtml(resource.id)}
+              </div>
+            </div>
           </div>
         </a>
       `;
@@ -636,42 +805,83 @@ async function loadActivityData() {
   if (!currentUser) return;
   
   try {
-    // Get reading sessions from last 30 days
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const { data: sessions } = await supabase
-      .from('reading_sessions')
-      .select('*')
-      .eq('user_id', currentUser.id)
-      .gte('created_at', thirtyDaysAgo.toISOString());
-    
-    userActivityData = sessions || [];
-    
-    // Also get from user_progress as fallback
-    const { data: progress } = await supabase
+    // Get ALL user progress
+    const { data: progress, error } = await supabase
       .from('user_progress')
-      .select('last_read_at, updated_at, current_page')
-      .eq('user_id', currentUser.id)
-      .gte('updated_at', thirtyDaysAgo.toISOString());
+      .select('*, resources(type)')
+      .eq('user_id', currentUser.id);
     
-    // Merge data
-    if (progress) {
+    if (error) {
+      console.error('Error fetching progress:', error);
+      return;
+    }
+    
+    console.log('Raw progress data:', progress);
+    
+    // Calculate total reading time for the summary
+    const totalReadingTime = progress?.reduce((sum, p) => sum + (p.reading_time || 0), 0) || 0;
+    
+    userActivityData = [];
+    const today = new Date().toDateString();
+    
+    if (progress && progress.length > 0) {
+      // Log first item to see available fields
+      console.log('Available fields:', Object.keys(progress[0]));
+      
       progress.forEach(p => {
-        userActivityData.push({
-          created_at: p.last_read_at || p.updated_at,
-          duration_minutes: 5, // Estimate
-          pages_read: 1
+        // Try different possible date field names
+        const activityDate = p.last_read_at || p.last_accessed_at || p.updated_at || p.created_at;
+        if (!activityDate) return;
+        
+        const readingTime = p.reading_time || 0;
+        const dateStr = new Date(activityDate).toDateString();
+        
+        console.log('Resource activity:', {
+          date: dateStr,
+          isToday: dateStr === today,
+          reading_time: readingTime,
+          activityDate: activityDate
         });
+        
+        // Only include if there's actual reading time
+        if (readingTime > 0) {
+          userActivityData.push({
+            created_at: activityDate,
+            duration_minutes: readingTime,
+            resource_type: p.resources?.type
+          });
+        }
       });
     }
     
+    console.log('Activity data loaded:', userActivityData.length, 'entries');
+    
     renderActivityChart('week');
-    updateActivitySummary();
+    updateActivitySummary(totalReadingTime);
+    updateTotalReadingTime(progress || []);
     
   } catch (error) {
     console.error('Error loading activity data:', error);
     renderActivityChart('week');
+  }
+}
+
+function updateTotalReadingTime(progressData) {
+  // Calculate total reading time from all user_progress entries
+  const totalMinutes = progressData.reduce((sum, p) => sum + (p.reading_time || 0), 0);
+  
+  let timeDisplay;
+  if (totalMinutes >= 60) {
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    timeDisplay = mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  } else {
+    timeDisplay = `${totalMinutes}m`;
+  }
+  
+  const statReadingTime = document.getElementById('statReadingTime');
+  if (statReadingTime) {
+    statReadingTime.textContent = timeDisplay;
   }
 }
 
@@ -695,13 +905,22 @@ function renderActivityChart(period = 'week') {
     activityByDay[key] = 0;
   }
   
-  // Sum up activity
+  // Sum up activity - normalize dates to local timezone
   userActivityData.forEach(session => {
-    const date = new Date(session.created_at).toDateString();
-    if (activityByDay.hasOwnProperty(date)) {
-      activityByDay[date] += session.duration_minutes || 5;
+    const sessionDate = new Date(session.created_at);
+    // Create a date string in local timezone
+    const localDate = new Date(sessionDate.getFullYear(), sessionDate.getMonth(), sessionDate.getDate());
+    const dateKey = localDate.toDateString();
+    
+    if (activityByDay.hasOwnProperty(dateKey)) {
+      activityByDay[dateKey] += session.duration_minutes || 0;
+      console.log('Added', session.duration_minutes, 'min to', dateKey);
+    } else {
+      console.log('Date not in range:', dateKey, 'from', session.created_at);
     }
   });
+  
+  console.log('Activity by day:', activityByDay);
   
   const values = Object.values(activityByDay);
   const maxValue = Math.max(...values, 1);
@@ -741,20 +960,37 @@ function renderActivityChart(period = 'week') {
   }
 }
 
-function updateActivitySummary() {
-  // Calculate total reading time this week
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
+function updateActivitySummary(totalReadingTimeOverride = null) {
+  // Filter activity data for this week
+  const now = new Date();
+  const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
   
-  const weekActivity = userActivityData.filter(s => new Date(s.created_at) >= weekAgo);
+  const weekActivity = userActivityData.filter(s => {
+    const activityDate = new Date(s.created_at);
+    const localDate = new Date(activityDate.getFullYear(), activityDate.getMonth(), activityDate.getDate());
+    return localDate >= weekAgo;
+  });
   
-  const totalMinutes = weekActivity.reduce((sum, s) => sum + (s.duration_minutes || 5), 0);
-  const hours = Math.floor(totalMinutes / 60);
-  const mins = totalMinutes % 60;
+  // Use the total from all resources accessed this week
+  const totalMinutes = weekActivity.reduce((sum, s) => sum + (s.duration_minutes || 0), 0);
+  
+  console.log('Week activity:', weekActivity.length, 'resources,', totalMinutes, 'minutes');
+  
+  // Format time display
+  let timeDisplay;
+  if (totalMinutes >= 60) {
+    const hours = Math.floor(totalMinutes / 60);
+    const mins = totalMinutes % 60;
+    timeDisplay = mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  } else if (totalMinutes > 0) {
+    timeDisplay = `${totalMinutes}m`;
+  } else {
+    timeDisplay = '0m';
+  }
   
   const totalReadingTimeEl = document.getElementById('totalReadingTime');
   if (totalReadingTimeEl) {
-    totalReadingTimeEl.textContent = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+    totalReadingTimeEl.textContent = timeDisplay;
   }
   
   // Resources this week
@@ -763,11 +999,11 @@ function updateActivitySummary() {
     resourcesThisWeekEl.textContent = weekActivity.length;
   }
   
-  // Pages read
+  // Pages read (estimate based on time - ~2 pages per minute)
   const pagesReadEl = document.getElementById('pagesRead');
   if (pagesReadEl) {
-    const pages = weekActivity.reduce((sum, s) => sum + (s.pages_read || 1), 0);
-    pagesReadEl.textContent = pages;
+    const estimatedPages = Math.round(totalMinutes * 2);
+    pagesReadEl.textContent = estimatedPages;
   }
 }
 
@@ -779,17 +1015,44 @@ function initGoalEditor() {
   const editBtn = document.getElementById('editGoalBtn');
   if (!editBtn) return;
   
-  editBtn.addEventListener('click', () => {
-    const currentTarget = parseInt(document.getElementById('goalTarget')?.textContent || '5');
-    const newTarget = prompt('¿Cuántos recursos quieres leer por semana?', currentTarget);
-    
-    if (newTarget && !isNaN(parseInt(newTarget))) {
-      updateGoalTarget(parseInt(newTarget));
-    }
-  });
+  editBtn.addEventListener('click', openGoalModal);
   
   // Load saved goal
   loadGoal();
+}
+
+function openGoalModal() {
+  const currentTarget = parseInt(document.getElementById('goalTarget')?.textContent || '5');
+  const goalInput = document.getElementById('goalInput');
+  const modal = document.getElementById('goalModal');
+  
+  if (goalInput) goalInput.value = currentTarget;
+  if (modal) modal.classList.add('active');
+}
+
+function closeGoalModal() {
+  const modal = document.getElementById('goalModal');
+  if (modal) modal.classList.remove('active');
+}
+
+function adjustGoal(delta) {
+  const goalInput = document.getElementById('goalInput');
+  if (!goalInput) return;
+  
+  let value = parseInt(goalInput.value) || 5;
+  value = Math.max(1, Math.min(50, value + delta));
+  goalInput.value = value;
+}
+
+function saveGoalFromModal() {
+  const goalInput = document.getElementById('goalInput');
+  if (!goalInput) return;
+  
+  const newTarget = parseInt(goalInput.value);
+  if (newTarget && newTarget >= 1 && newTarget <= 50) {
+    updateGoalTarget(newTarget);
+    closeGoalModal();
+  }
 }
 
 async function loadGoal() {
@@ -799,17 +1062,22 @@ async function loadGoal() {
     // Get goal from profile or use default
     const target = currentProfile?.weekly_goal || 5;
     
-    // Count resources read this week
+    // Count resources accessed this week (with actual activity)
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     
     const { data: weekProgress } = await supabase
       .from('user_progress')
-      .select('resource_id')
+      .select('resource_id, progress, reading_time')
       .eq('user_id', currentUser.id)
-      .gte('updated_at', weekAgo.toISOString());
+      .gte('last_read_at', weekAgo.toISOString());
     
-    const current = weekProgress?.length || 0;
+    // Count only resources with actual activity
+    const activeResources = weekProgress?.filter(p => 
+      (p.progress > 0) || (p.reading_time > 0)
+    ) || [];
+    
+    const current = activeResources.length;
     
     updateGoalUI(current, target);
     
@@ -911,7 +1179,7 @@ async function loadRelatedResources() {
     container.innerHTML = `
       <div class="favorites-list">
         ${related.map(resource => {
-          const typeInfo = typeConfig[resource.type] || { icon: '📁' };
+          const typeInfo = getTypeConfig(resource.type);
           return `
             <a href="resource.html#${resource.id}" class="favorite-item hover-lift">
               <span class="favorite-icon">${typeInfo.icon}</span>

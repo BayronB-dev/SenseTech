@@ -9,14 +9,46 @@ let currentResource = null;
 let userProgress = null;
 let categoryLabels = {};
 
-// Config
-const typeConfig = {
+// Type config (loaded from database)
+let typeLabels = {};
+let typeIcons = {};
+
+// Fallback type config
+const defaultTypeConfig = {
   'book': { label: 'Libro', icon: '📕' },
   'pdf': { label: 'PDF', icon: '📄' },
   'video': { label: 'Video', icon: '🎬' },
   'article': { label: 'Artículo', icon: '📰' },
-  'documentation': { label: 'Documentación', icon: '📋' }
+  'documentation': { label: 'Documentación', icon: '📋' },
+  'link': { label: 'Enlace', icon: '🔗' }
 };
+
+// Dynamic typeConfig getter
+function getTypeConfig(slug) {
+  if (typeLabels[slug]) {
+    return { label: typeLabels[slug], icon: typeIcons[slug] || '📁' };
+  }
+  return defaultTypeConfig[slug] || { label: 'Recurso', icon: '📁' };
+}
+
+// Load types from database
+async function loadTypesFromDB() {
+  try {
+    const { data, error } = await supabase
+      .from('resource_types')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    
+    (data || []).forEach(type => {
+      typeLabels[type.slug] = type.name;
+      typeIcons[type.slug] = type.icon || '📁';
+    });
+  } catch (error) {
+    console.error('Error loading types:', error);
+  }
+}
 
 // ========================================
 // INITIALIZATION
@@ -38,8 +70,11 @@ async function initResourcePage() {
   currentUser = user;
   updateUserDisplay(profile);
   
-  // Load categories from database
-  await loadCategoriesFromDB();
+  // Load categories and types from database
+  await Promise.all([
+    loadCategoriesFromDB(),
+    loadTypesFromDB()
+  ]);
   
   // Get resource ID from URL (try hash first, then query string)
   let resourceId = window.location.hash.slice(1); // Remove the # symbol
@@ -276,7 +311,7 @@ async function loadUserProgress(resourceId) {
 
 function renderResource() {
   const resource = currentResource;
-  const typeInfo = typeConfig[resource.type] || { label: 'Recurso', icon: '📁' };
+  const typeInfo = getTypeConfig(resource.type);
   const categoryLabel = categoryLabels[resource.category] || resource.category || 'General';
   
   // Cover
@@ -325,7 +360,91 @@ function renderResource() {
   updateFavoriteButton();
 }
 
+function getButtonTextForType(type, state) {
+  // state: 'start', 'continue', 'complete'
+  const texts = {
+    video: {
+      start: 'Comenzar a ver',
+      continue: 'Continuar viendo',
+      complete: 'Volver a ver'
+    },
+    pdf: {
+      start: 'Comenzar a leer',
+      continue: 'Continuar leyendo',
+      complete: 'Volver a leer'
+    },
+    documentation: {
+      start: 'Comenzar a leer',
+      continue: 'Continuar leyendo',
+      complete: 'Volver a leer'
+    },
+    book: {
+      start: 'Comenzar a leer',
+      continue: 'Continuar leyendo',
+      complete: 'Volver a leer'
+    },
+    link: {
+      start: 'Abrir enlace externo',
+      continue: 'Abrir enlace externo',
+      complete: 'Abrir enlace externo'
+    }
+  };
+  
+  const typeKey = type?.toLowerCase() || 'pdf';
+  return texts[typeKey]?.[state] || texts.pdf[state];
+}
+
+function getButtonIconForType(type, state) {
+  const isVideo = type?.toLowerCase() === 'video';
+  
+  if (state === 'complete') {
+    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M1 4v6h6M23 20v-6h-6"/>
+      <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+    </svg>`;
+  }
+  
+  if (type?.toLowerCase() === 'link') {
+    return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+      <polyline points="15 3 21 3 21 9"/>
+      <line x1="10" y1="14" x2="21" y2="3"/>
+    </svg>`;
+  }
+  
+  // Play icon for video and documents
+  return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <polygon points="5 3 19 12 5 21 5 3"/>
+  </svg>`;
+}
+
 function renderProgress() {
+  const type = currentResource?.type?.toLowerCase();
+  const isExternalLink = type === 'link';
+  const progressSection = document.getElementById('progressSection');
+  
+  // Hide progress section for external links
+  if (isExternalLink) {
+    if (progressSection) {
+      progressSection.style.display = 'none';
+    }
+    
+    // Update button for external link
+    const startBtn = document.getElementById('startReadingBtn');
+    if (startBtn) {
+      startBtn.innerHTML = `
+        ${getButtonIconForType('link', 'start')}
+        ${getButtonTextForType('link', 'start')}
+      `;
+    }
+    return;
+  }
+  
+  // Show progress section for regular resources
+  if (progressSection) {
+    progressSection.style.display = '';
+  }
+  
   const progressPercentage = userProgress?.progress || userProgress?.progress_percentage || 0;
   const lastAccessed = userProgress?.last_read || userProgress?.last_accessed_at;
   
@@ -340,25 +459,20 @@ function renderProgress() {
   }
   document.getElementById('progressText').textContent = progressText;
   
-  // Update button text
+  // Update button text based on type and progress
   const startBtn = document.getElementById('startReadingBtn');
   if (startBtn) {
+    let state = 'start';
     if (progressPercentage === 100) {
-      startBtn.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 4v6h6M23 20v-6h-6"/>
-          <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
-        </svg>
-        Volver a leer
-      `;
+      state = 'complete';
     } else if (progressPercentage > 0) {
-      startBtn.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polygon points="5 3 19 12 5 21 5 3"/>
-        </svg>
-        Continuar leyendo
-      `;
+      state = 'continue';
     }
+    
+    startBtn.innerHTML = `
+      ${getButtonIconForType(type, state)}
+      ${getButtonTextForType(type, state)}
+    `;
   }
 }
 
@@ -377,6 +491,100 @@ function updateFavoriteButton() {
     btn.classList.remove('active');
     icon.textContent = '🤍';
     text.textContent = 'Agregar a favoritos';
+  }
+}
+
+// ========================================
+// RATING SYSTEM
+// ========================================
+
+function initRatingSystem() {
+  const starRating = document.getElementById('starRating');
+  if (!starRating) return;
+  
+  const stars = starRating.querySelectorAll('.star-btn');
+  
+  // Hover effects
+  stars.forEach((star, index) => {
+    star.addEventListener('mouseenter', () => {
+      highlightStars(index + 1);
+    });
+    
+    star.addEventListener('mouseleave', () => {
+      const currentRating = userProgress?.rating || 0;
+      highlightStars(currentRating, true);
+    });
+    
+    star.addEventListener('click', () => {
+      submitRating(index + 1);
+    });
+  });
+}
+
+function highlightStars(rating, isActive = false) {
+  const stars = document.querySelectorAll('.star-btn');
+  stars.forEach((star, index) => {
+    star.classList.remove('hovered', 'active');
+    if (index < rating) {
+      star.classList.add(isActive ? 'active' : 'hovered');
+    }
+  });
+}
+
+async function submitRating(rating) {
+  if (!currentUser || !currentResource) return;
+  
+  try {
+    // Update user_progress with rating
+    const { error } = await supabase
+      .from('user_progress')
+      .update({ rating: rating })
+      .eq('user_id', currentUser.id)
+      .eq('resource_id', currentResource.id);
+    
+    if (error) throw error;
+    
+    // Update local state
+    if (userProgress) {
+      userProgress.rating = rating;
+    }
+    
+    // Update UI
+    highlightStars(rating, true);
+    
+    const ratingText = document.getElementById('ratingText');
+    const ratingLabels = ['', 'Malo', 'Regular', 'Bueno', 'Muy bueno', 'Excelente'];
+    ratingText.textContent = `¡Gracias! Tu calificación: ${ratingLabels[rating]}`;
+    ratingText.classList.add('submitted');
+    
+  } catch (error) {
+    console.error('Error submitting rating:', error);
+  }
+}
+
+function showRatingSection() {
+  const progressPercentage = userProgress?.progress || 0;
+  const ratingSection = document.getElementById('ratingSection');
+  
+  if (!ratingSection) return;
+  
+  // Only show for completed resources (not links)
+  const isLink = currentResource?.type?.toLowerCase() === 'link';
+  
+  if (progressPercentage >= 100 && !isLink) {
+    ratingSection.style.display = 'block';
+    
+    // Show existing rating if any
+    const existingRating = userProgress?.rating || 0;
+    if (existingRating > 0) {
+      highlightStars(existingRating, true);
+      const ratingLabels = ['', 'Malo', 'Regular', 'Bueno', 'Muy bueno', 'Excelente'];
+      const ratingText = document.getElementById('ratingText');
+      ratingText.textContent = `Tu calificación: ${ratingLabels[existingRating]}`;
+      ratingText.classList.add('submitted');
+    }
+  } else {
+    ratingSection.style.display = 'none';
   }
 }
 
@@ -399,7 +607,7 @@ async function loadRelatedResources() {
     }
     
     container.innerHTML = related.map(resource => {
-      const typeInfo = typeConfig[resource.type] || { icon: '📁' };
+      const typeInfo = getTypeConfig(resource.type);
       return `
         <a href="resource.html#${resource.id}" class="related-card">
           <div class="related-card-image">
@@ -432,6 +640,10 @@ function initActions() {
   
   // Start reading button
   document.getElementById('startReadingBtn')?.addEventListener('click', startReading);
+  
+  // Rating system
+  initRatingSystem();
+  showRatingSection();
 }
 
 async function toggleFavorite() {
@@ -532,6 +744,19 @@ function startReading() {
   const hasFile = currentResource.file_url;
   const hasExternal = currentResource.external_url;
   
+  // External links (type 'link') always open in new tab
+  if (type === 'link') {
+    const url = hasExternal || hasFile;
+    if (url) {
+      window.open(url, '_blank');
+      // Register view but no progress tracking for external links
+      registerExternalView();
+      return;
+    }
+    showToast('Este enlace no tiene URL configurada', 'error');
+    return;
+  }
+  
   // Open internal reader for PDFs, books, and documents
   if (hasFile && (type === 'pdf' || type === 'book' || type === 'documentation')) {
     window.location.href = `reader.html#${currentResource.id}`;
@@ -558,6 +783,38 @@ function startReading() {
   }
   
   showToast('Este recurso no tiene contenido disponible', 'error');
+}
+
+async function registerExternalView() {
+  if (!currentUser || !currentResource) return;
+  
+  try {
+    // Just mark as viewed, no progress tracking
+    const { data: existing } = await supabase
+      .from('user_progress')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .eq('resource_id', currentResource.id)
+      .single();
+    
+    if (!existing) {
+      await supabase
+        .from('user_progress')
+        .insert({
+          user_id: currentUser.id,
+          resource_id: currentResource.id,
+          has_viewed: true,
+          last_accessed_at: new Date().toISOString()
+        });
+    } else {
+      await supabase
+        .from('user_progress')
+        .update({ last_accessed_at: new Date().toISOString() })
+        .eq('id', existing.id);
+    }
+  } catch (error) {
+    console.error('Error registering external view:', error);
+  }
 }
 
 async function updateProgress(percentage) {

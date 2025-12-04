@@ -44,6 +44,10 @@
         <span class="icon">📂</span>
         Categorías
       </a>
+      <a href="#types" class="sidebar-link" data-section="types">
+        <span class="icon">📄</span>
+        Tipos de Recurso
+      </a>
     </nav>
 
     <div class="sidebar-footer">
@@ -253,6 +257,20 @@
         <!-- Categories will be loaded here -->
       </div>
     </section>
+
+    <!-- Types Section -->
+    <section class="admin-section" id="section-types">
+      <div class="section-header">
+        <h2>📄 Tipos de Recurso</h2>
+        <button class="btn btn-primary" id="addTypeBtn">
+          <span>➕</span> Nuevo Tipo
+        </button>
+      </div>
+
+      <div class="categories-grid" id="typesGrid">
+        <!-- Types will be loaded here -->
+      </div>
+    </section>
   </main>
 
   <!-- Category Modal -->
@@ -289,6 +307,40 @@
     </div>
   </div>
 
+  <!-- Type Modal -->
+  <div class="modal-overlay" id="typeModal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h3 id="typeModalTitle">Nuevo Tipo</h3>
+        <button class="modal-close" id="closeTypeModal">&times;</button>
+      </div>
+      <form id="typeForm" class="modal-body">
+        <input type="hidden" id="typeId">
+        
+        <div class="form-group">
+          <label for="typeName" class="form-label">Nombre *</label>
+          <input type="text" id="typeName" class="form-input" required placeholder="Ej: Libro">
+        </div>
+
+        <div class="form-group">
+          <label for="typeSlug" class="form-label">Slug (identificador) *</label>
+          <input type="text" id="typeSlug" class="form-input" required placeholder="Ej: book">
+          <small style="color: var(--text-muted);">Solo letras minúsculas, números y guiones</small>
+        </div>
+
+        <div class="form-group">
+          <label for="typeIcon" class="form-label">Icono (emoji)</label>
+          <input type="text" id="typeIcon" class="form-input" placeholder="Ej: 📕">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelTypeBtn">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="saveTypeBtn">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Resource Modal -->
   <div class="modal-overlay" id="resourceModal">
     <div class="modal">
@@ -309,11 +361,7 @@
             <label for="resourceType" class="form-label">Tipo *</label>
             <select id="resourceTypeInput" class="form-input" required>
               <option value="">Seleccionar...</option>
-              <option value="book">📕 Libro</option>
-              <option value="pdf">📄 PDF</option>
-              <option value="video">🎬 Video</option>
-              <option value="article">📰 Artículo</option>
-              <option value="documentation">📋 Documentación</option>
+              <!-- Types loaded dynamically -->
             </select>
           </div>
 
@@ -321,14 +369,7 @@
             <label for="resourceCategoryInput" class="form-label">Categoría *</label>
             <select id="resourceCategoryInput" class="form-input" required>
               <option value="">Seleccionar...</option>
-              <option value="programming">Programación</option>
-              <option value="databases">Bases de Datos</option>
-              <option value="networks">Redes</option>
-              <option value="software-engineering">Ingeniería de Software</option>
-              <option value="ai-ml">IA & Machine Learning</option>
-              <option value="security">Seguridad</option>
-              <option value="devops">DevOps</option>
-              <option value="other">Otros</option>
+              <!-- Categories loaded dynamically -->
             </select>
           </div>
         </div>
@@ -359,13 +400,14 @@
           </div>
         </div>
 
-        <div class="form-group">
+        <!-- File upload (for regular resources) -->
+        <div class="form-group" id="fileUploadGroup">
           <label class="form-label">Archivo del recurso</label>
           <div class="file-upload-area" id="fileUploadArea">
             <div class="file-upload-content" id="fileUploadContent">
               <span class="file-upload-icon">📁</span>
               <p>Arrastra un archivo aquí o <span class="file-upload-link">selecciona un archivo</span></p>
-              <small>PDF, EPUB, DOC, etc. (máx. 50MB)</small>
+              <small>PDF, EPUB, DOC, MP4, etc. (máx. 50MB)</small>
             </div>
             <div class="file-upload-info" id="fileInfo" style="display: none;">
               <span class="file-info-icon">📄</span>
@@ -375,6 +417,13 @@
             </div>
             <input type="file" id="resourceFileInput" accept=".pdf,.epub,.doc,.docx,.txt,.mp4,.webm" hidden>
           </div>
+        </div>
+
+        <!-- URL input (for external links) -->
+        <div class="form-group" id="externalUrlGroup" style="display: none;">
+          <label for="resourceExternalUrl" class="form-label">URL del enlace externo</label>
+          <input type="url" id="resourceExternalUrl" class="form-input" placeholder="https://docs.python.org/3/">
+          <small class="form-hint">Ingresa la URL completa de la documentación o recurso externo</small>
         </div>
 
         <div class="modal-footer">

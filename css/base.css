@@ -13,6 +13,7 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -106,6 +107,7 @@ ul, ol {
   max-width: 1280px;
   margin: 0 auto;
   padding: 0 var(--space-lg);
+  overflow-x: hidden;
 }
 
 .container-sm {

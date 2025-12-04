@@ -9,19 +9,34 @@ let currentProfile = null;
 let allResources = [];
 let allUsers = [];
 let allCategories = [];
+let allTypes = [];
 let deleteTarget = null;
 
 // Category config (loaded from database)
 let categoryLabels = {};
 let categoryIcons = {};
 
-const typeConfig = {
+// Type config (loaded from database)
+let typeLabels = {};
+let typeIcons = {};
+
+// Fallback type config (used if database table doesn't exist yet)
+const defaultTypeConfig = {
   'book': { label: 'Libro', icon: '📕' },
   'pdf': { label: 'PDF', icon: '📄' },
   'video': { label: 'Video', icon: '🎬' },
   'article': { label: 'Artículo', icon: '📰' },
-  'documentation': { label: 'Documentación', icon: '📋' }
+  'documentation': { label: 'Documentación', icon: '📋' },
+  'link': { label: 'Enlace', icon: '🔗' }
 };
+
+// Dynamic typeConfig getter
+function getTypeConfig(slug) {
+  if (typeLabels[slug]) {
+    return { label: typeLabels[slug], icon: typeIcons[slug] || '📁' };
+  }
+  return defaultTypeConfig[slug] || { label: 'Recurso', icon: '📁' };
+}
 
 // ========================================
 // INITIALIZATION
@@ -49,8 +64,11 @@ async function initAdmin() {
   currentUser = user;
   currentProfile = profile;
   
-  // Load categories from database
-  await loadCategoriesFromDB();
+  // Load categories and types from database
+  await Promise.all([
+    loadCategoriesFromDB(),
+    loadTypesFromDB()
+  ]);
   
   // Update admin display
   updateAdminDisplay();
@@ -64,6 +82,7 @@ async function initAdmin() {
   // Init modals
   initModals();
   initCategoryModal();
+  initTypeModal();
   
   // Load dashboard data
   await loadDashboard();
@@ -146,6 +165,9 @@ async function loadSectionData(section) {
     case 'categories':
       await loadCategories();
       break;
+    case 'types':
+      await loadTypes();
+      break;
   }
 }
 
@@ -204,7 +226,7 @@ function renderRecentResources(resources) {
   }
   
   container.innerHTML = resources.map(r => {
-    const typeInfo = typeConfig[r.type] || { icon: '📁' };
+    const typeInfo = getTypeConfig(r.type);
     return `
       <div class="recent-item">
         <div class="icon">${typeInfo.icon}</div>
@@ -269,7 +291,7 @@ function renderResourcesTable(resources) {
   }
   
   tbody.innerHTML = resources.map(r => {
-    const typeInfo = typeConfig[r.type] || { label: 'Otro', icon: '📁' };
+    const typeInfo = getTypeConfig(r.type);
     const categoryLabel = categoryLabels[r.category] || r.category || 'Sin categoría';
     
     return `
@@ -672,7 +694,7 @@ async function saveCategory(e) {
   }
 }
 
-async function deleteCategoryBySlug(slug) {
+function deleteCategoryBySlug(slug) {
   // Check if category has resources
   const resourceCount = allResources.filter(r => r.category === slug).length;
   
@@ -684,23 +706,8 @@ async function deleteCategoryBySlug(slug) {
   const category = allCategories.find(c => c.slug === slug);
   if (!category) return;
   
-  if (confirm(`¿Eliminar la categoría "${category.name}"?`)) {
-    try {
-      const { error } = await supabase
-        .from('categories')
-        .delete()
-        .eq('id', category.id);
-      
-      if (error) throw error;
-      
-      showToast('Categoría eliminada');
-      await loadCategories();
-      
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      showToast('Error al eliminar: ' + (error.message || 'Error desconocido'), 'error');
-    }
-  }
+  deleteTarget = { type: 'category', id: category.id, name: category.name };
+  document.getElementById('deleteModal').classList.add('active');
 }
 
 function updateCategorySelects() {
@@ -750,6 +757,10 @@ function initModals() {
   cancelBtn?.addEventListener('click', () => closeResourceModal());
   
   form?.addEventListener('submit', saveResource);
+  
+  // Toggle file/URL input based on type selection
+  const typeSelect = document.getElementById('resourceTypeInput');
+  typeSelect?.addEventListener('change', toggleFileUrlInput);
   
   // Delete modal
   const deleteModal = document.getElementById('deleteModal');
@@ -924,6 +935,19 @@ async function uploadFile(file, bucket, folder) {
   return urlData.publicUrl;
 }
 
+function toggleFileUrlInput() {
+  const typeSelect = document.getElementById('resourceTypeInput');
+  const fileUploadGroup = document.getElementById('fileUploadGroup');
+  const externalUrlGroup = document.getElementById('externalUrlGroup');
+  
+  if (!typeSelect || !fileUploadGroup || !externalUrlGroup) return;
+  
+  const isLink = typeSelect.value === 'link';
+  
+  fileUploadGroup.style.display = isLink ? 'none' : 'block';
+  externalUrlGroup.style.display = isLink ? 'block' : 'none';
+}
+
 function openResourceModal(resource = null) {
   const modal = document.getElementById('resourceModal');
   const title = document.getElementById('modalTitle');
@@ -937,6 +961,9 @@ function openResourceModal(resource = null) {
   document.getElementById('coverPreview').style.display = 'none';
   document.getElementById('fileUploadContent').style.display = 'flex';
   document.getElementById('fileInfo').style.display = 'none';
+  
+  // Reset external URL
+  document.getElementById('resourceExternalUrl').value = '';
   
   // Reset download button
   if (downloadBtn) {
@@ -960,8 +987,13 @@ function openResourceModal(resource = null) {
       document.getElementById('coverPreview').style.display = 'flex';
     }
     
-    // Show existing file if any
-    if (resource.file_url) {
+    // Handle external URL for links
+    if (resource.type === 'link' && resource.external_url) {
+      document.getElementById('resourceExternalUrl').value = resource.external_url;
+    }
+    
+    // Show existing file if any (for non-link types)
+    if (resource.file_url && resource.type !== 'link') {
       const fileName = resource.file_url.split('/').pop() || 'Archivo existente';
       document.getElementById('fileName').textContent = fileName;
       document.getElementById('fileSize').textContent = 'Archivo actual';
@@ -979,6 +1011,9 @@ function openResourceModal(resource = null) {
     form.reset();
     document.getElementById('resourceId').value = '';
   }
+  
+  // Toggle file/URL input based on type
+  toggleFileUrlInput();
   
   modal.classList.add('active');
 }
@@ -1011,21 +1046,32 @@ async function saveResource(e) {
       coverUrl = await uploadFile(selectedCoverFile, 'resources', 'covers');
     }
     
-    // Upload resource file if new file selected
+    const resourceType = document.getElementById('resourceTypeInput').value;
+    const isLink = resourceType === 'link';
+    
+    // Handle file URL or external URL based on type
     let fileUrl = existingResource?.file_url || null;
-    if (selectedResourceFile) {
+    let externalUrl = existingResource?.external_url || null;
+    
+    if (isLink) {
+      // For links, use the external URL field
+      externalUrl = document.getElementById('resourceExternalUrl').value;
+      fileUrl = null; // Clear file URL for links
+    } else if (selectedResourceFile) {
+      // For regular resources, upload the file
       saveBtn.textContent = 'Subiendo archivo...';
       fileUrl = await uploadFile(selectedResourceFile, 'resources', 'files');
     }
     
     const data = {
       title: document.getElementById('resourceTitleInput').value,
-      type: document.getElementById('resourceTypeInput').value,
+      type: resourceType,
       category: document.getElementById('resourceCategoryInput').value,
       author: document.getElementById('resourceAuthorInput').value,
       description: document.getElementById('resourceDescriptionInput').value,
       cover_url: coverUrl,
-      file_url: fileUrl
+      file_url: fileUrl,
+      external_url: externalUrl
     };
     
     saveBtn.textContent = 'Guardando...';
@@ -1114,6 +1160,26 @@ async function confirmDelete() {
       
       showToast('Recurso eliminado');
       await loadResources();
+    } else if (deleteTarget.type === 'category') {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('id', deleteTarget.id);
+      
+      if (error) throw error;
+      
+      showToast('Categoría eliminada');
+      await loadCategories();
+    } else if (deleteTarget.type === 'resourceType') {
+      const { error } = await supabase
+        .from('resource_types')
+        .delete()
+        .eq('id', deleteTarget.id);
+      
+      if (error) throw error;
+      
+      showToast('Tipo eliminado');
+      await loadTypes();
     }
     
     closeDeleteModal();
@@ -1162,7 +1228,249 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
+// ========================================
+// RESOURCE TYPES
+// ========================================
+
+async function loadTypesFromDB() {
+  try {
+    const { data, error } = await supabase
+      .from('resource_types')
+      .select('*')
+      .order('name');
+    
+    if (error) throw error;
+    
+    allTypes = data || [];
+    
+    // Update lookup objects
+    typeLabels = {};
+    typeIcons = {};
+    allTypes.forEach(type => {
+      typeLabels[type.slug] = type.name;
+      typeIcons[type.slug] = type.icon || '📁';
+    });
+    
+    // Update selects
+    updateTypeSelects();
+    
+  } catch (error) {
+    console.error('Error loading types:', error);
+    // Use fallback defaults if table doesn't exist yet
+    typeLabels = {};
+    typeIcons = {};
+    Object.entries(defaultTypeConfig).forEach(([slug, config]) => {
+      typeLabels[slug] = config.label;
+      typeIcons[slug] = config.icon;
+    });
+  }
+}
+
+async function loadTypes() {
+  const container = document.getElementById('typesGrid');
+  
+  try {
+    // Reload from DB
+    await loadTypesFromDB();
+    
+    // Count resources per type
+    const counts = {};
+    allResources.forEach(r => {
+      if (r.type) {
+        counts[r.type] = (counts[r.type] || 0) + 1;
+      }
+    });
+    
+    if (allTypes.length === 0) {
+      container.innerHTML = '<p class="empty-text">No hay tipos. Crea uno nuevo.</p>';
+      return;
+    }
+    
+    container.innerHTML = allTypes.map(type => `
+      <div class="category-card" data-type="${type.slug}">
+        <div class="icon">${type.icon || '📁'}</div>
+        <h4>${type.name}</h4>
+        <p class="count">${counts[type.slug] || 0} recursos</p>
+        <div class="category-actions">
+          <button class="action-btn" onclick="editType('${type.slug}')" title="Editar">✏️</button>
+          <button class="action-btn danger" onclick="deleteTypeBySlug('${type.slug}')" title="Eliminar">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+    
+  } catch (error) {
+    console.error('Error loading types:', error);
+    container.innerHTML = '<p class="empty-text">Error al cargar tipos</p>';
+  }
+}
+
+function initTypeModal() {
+  const modal = document.getElementById('typeModal');
+  const addBtn = document.getElementById('addTypeBtn');
+  const closeBtn = document.getElementById('closeTypeModal');
+  const cancelBtn = document.getElementById('cancelTypeBtn');
+  const form = document.getElementById('typeForm');
+  const nameInput = document.getElementById('typeName');
+  const slugInput = document.getElementById('typeSlug');
+  
+  addBtn?.addEventListener('click', () => openTypeModal());
+  closeBtn?.addEventListener('click', () => closeTypeModal());
+  cancelBtn?.addEventListener('click', () => closeTypeModal());
+  form?.addEventListener('submit', saveType);
+  
+  // Auto-generate slug from name
+  nameInput?.addEventListener('input', () => {
+    if (!document.getElementById('typeId').value) {
+      slugInput.value = nameInput.value
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+    }
+  });
+  
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) closeTypeModal();
+  });
+}
+
+function openTypeModal(typeSlug = null) {
+  const modal = document.getElementById('typeModal');
+  const title = document.getElementById('typeModalTitle');
+  const form = document.getElementById('typeForm');
+  
+  if (typeSlug) {
+    const type = allTypes.find(t => t.slug === typeSlug);
+    if (type) {
+      title.textContent = 'Editar Tipo';
+      document.getElementById('typeId').value = type.id;
+      document.getElementById('typeName').value = type.name;
+      document.getElementById('typeSlug').value = type.slug;
+      document.getElementById('typeIcon').value = type.icon || '';
+      document.getElementById('typeSlug').readOnly = true;
+    }
+  } else {
+    title.textContent = 'Nuevo Tipo';
+    form.reset();
+    document.getElementById('typeId').value = '';
+    document.getElementById('typeSlug').readOnly = false;
+  }
+  
+  modal.classList.add('active');
+}
+
+function closeTypeModal() {
+  document.getElementById('typeModal').classList.remove('active');
+}
+
+function editType(slug) {
+  openTypeModal(slug);
+}
+
+async function saveType(e) {
+  e.preventDefault();
+  
+  const id = document.getElementById('typeId').value;
+  const name = document.getElementById('typeName').value.trim();
+  const slug = document.getElementById('typeSlug').value.trim().toLowerCase();
+  const icon = document.getElementById('typeIcon').value.trim() || '📁';
+  
+  if (!name || !slug) {
+    showToast('Nombre y slug son requeridos', 'error');
+    return;
+  }
+  
+  // Validate slug format
+  if (!/^[a-z0-9-]+$/.test(slug)) {
+    showToast('El slug solo puede contener letras minúsculas, números y guiones', 'error');
+    return;
+  }
+  
+  const saveBtn = document.getElementById('saveTypeBtn');
+  const originalText = saveBtn.textContent;
+  saveBtn.textContent = 'Guardando...';
+  saveBtn.disabled = true;
+  
+  try {
+    if (id) {
+      // Update existing
+      const { error } = await supabase
+        .from('resource_types')
+        .update({ name, icon })
+        .eq('id', parseInt(id));
+      
+      if (error) throw error;
+      showToast('Tipo actualizado');
+    } else {
+      // Check if slug exists
+      const existing = allTypes.find(t => t.slug === slug);
+      if (existing) {
+        showToast('Ya existe un tipo con ese identificador', 'error');
+        return;
+      }
+      
+      // Insert new
+      const { error } = await supabase
+        .from('resource_types')
+        .insert({ slug, name, icon });
+      
+      if (error) throw error;
+      showToast('Tipo creado');
+    }
+    
+    closeTypeModal();
+    await loadTypes();
+    
+  } catch (error) {
+    console.error('Error saving type:', error);
+    showToast('Error al guardar: ' + (error.message || 'Error desconocido'), 'error');
+  } finally {
+    saveBtn.textContent = originalText;
+    saveBtn.disabled = false;
+  }
+}
+
+function deleteTypeBySlug(slug) {
+  // Check if type has resources
+  const resourceCount = allResources.filter(r => r.type === slug).length;
+  
+  if (resourceCount > 0) {
+    showToast(`No se puede eliminar: hay ${resourceCount} recursos de este tipo`, 'error');
+    return;
+  }
+  
+  const type = allTypes.find(t => t.slug === slug);
+  if (!type) return;
+  
+  deleteTarget = { type: 'resourceType', id: type.id, name: type.name };
+  document.getElementById('deleteModal').classList.add('active');
+}
+
+function updateTypeSelects() {
+  // Update type selects in resource form
+  const selects = [document.getElementById('resourceTypeInput')];
+  
+  selects.forEach(select => {
+    if (!select) return;
+    
+    const currentValue = select.value;
+    
+    select.innerHTML = '<option value="">Seleccionar...</option>';
+    
+    allTypes.forEach(type => {
+      const option = document.createElement('option');
+      option.value = type.slug;
+      option.textContent = `${type.icon || '📁'} ${type.name}`;
+      select.appendChild(option);
+    });
+    
+    select.value = currentValue;
+  });
+}
+
 // Make functions available globally
 window.editResource = editResource;
 window.deleteResource = deleteResource;
 window.toggleUserRole = toggleUserRole;
+window.editType = editType;
+window.deleteTypeBySlug = deleteTypeBySlug;

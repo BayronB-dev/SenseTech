@@ -322,6 +322,8 @@
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
 }
 
 .resource-card:hover {
@@ -394,6 +396,9 @@
 
 .resource-card-content {
   padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .resource-category {
@@ -422,7 +427,7 @@
 .resource-card-author {
   font-size: var(--text-sm);
   color: var(--text-muted);
-  margin-bottom: var(--space-md);
+  flex: 1;
 }
 
 .resource-card-meta {
@@ -431,6 +436,7 @@
   align-items: center;
   padding-top: var(--space-md);
   border-top: 1px solid var(--border-color);
+  margin-top: auto;
 }
 
 .resource-card-stats {
@@ -444,6 +450,11 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
+}
+
+.resource-rating {
+  color: #fbbf24;
+  font-weight: 600;
 }
 
 .resource-card-action {

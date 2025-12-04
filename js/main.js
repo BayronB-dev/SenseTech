@@ -521,23 +521,25 @@ const tourSteps = {
     },
     {
       target: '.navbar-nav',
+      mobileTarget: '.mobile-menu-toggle',
       title: 'Navegación',
       content: 'Usa el menú para ir a la biblioteca y explorar todos los recursos disponibles.',
+      mobileContent: 'Toca el menú para acceder a la biblioteca y otras secciones.',
       position: 'bottom'
     }
   ],
   'library.html': [
     {
-      target: '.search-input',
+      target: '.search-box',
       title: 'Buscar recursos',
       content: 'Usa la barra de búsqueda para encontrar recursos por título o descripción.',
       position: 'bottom'
     },
     {
-      target: '.filter-section',
+      target: '.filter-controls',
       title: 'Filtros',
       content: 'Filtra por categoría, tipo de recurso y más para encontrar exactamente lo que necesitas.',
-      position: 'right'
+      position: 'bottom'
     }
   ],
   'reader.html': [
@@ -622,7 +624,13 @@ function startTour(page) {
     isAnimating = true;
     
     const step = steps[index];
-    const target = document.querySelector(step.target);
+    const isMobile = window.innerWidth <= 768;
+    
+    // Use mobile target/content if available and on mobile
+    const targetSelector = (isMobile && step.mobileTarget) ? step.mobileTarget : step.target;
+    const content = (isMobile && step.mobileContent) ? step.mobileContent : step.content;
+    
+    const target = document.querySelector(targetSelector);
     
     if (!target) {
       isAnimating = false;
@@ -660,7 +668,7 @@ function startTour(page) {
     // Update tooltip content
     tourOverlay.querySelector('.tour-step-indicator').textContent = `${index + 1}/${steps.length}`;
     tourOverlay.querySelector('.tour-title').textContent = step.title;
-    tourOverlay.querySelector('.tour-content').textContent = step.content;
+    tourOverlay.querySelector('.tour-content').textContent = content;
     
     // Position highlight with padding (using fixed positioning)
     const highlight = tourOverlay.querySelector('.tour-highlight');
