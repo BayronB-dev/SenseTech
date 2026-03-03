@@ -1307,7 +1307,8 @@ let ttsState = {
   isPaused: false,
   currentUtterance: null,
   baseVoice: null, // The actual system voice used as base
-  selectedGender: 'male', // 'male' or 'female'
+  davidVoice: null, // David voice reference
+  selectedGender: 'neutral', // 'neutral' or 'david'
   rate: 1,
   pageTexts: [], // Array of text content per page
   currentPageIndex: 0,
@@ -1344,22 +1345,24 @@ function loadVoices() {
   let baseVoice = allVoices.find(v => v.lang.startsWith('es')) || allVoices[0] || null;
   ttsState.baseVoice = baseVoice;
   
-  // Always show exactly 2 options: Masculino and Femenino
+  // Find the David voice specifically
+  ttsState.davidVoice = allVoices.find(v => v.name.toLowerCase().includes('david')) || null;
+  
   const voiceSelect = document.getElementById('ttsVoiceSelect');
   voiceSelect.innerHTML = '';
   
-  const maleOption = document.createElement('option');
-  maleOption.value = 'male';
-  maleOption.textContent = '♂ Español Neutro - Masculino';
-  maleOption.selected = true;
-  voiceSelect.appendChild(maleOption);
+  const neutralOption = document.createElement('option');
+  neutralOption.value = 'neutral';
+  neutralOption.textContent = 'Español Neutro';
+  neutralOption.selected = true;
+  voiceSelect.appendChild(neutralOption);
   
-  const femaleOption = document.createElement('option');
-  femaleOption.value = 'female';
-  femaleOption.textContent = '♀ Español Neutro - Femenino';
-  voiceSelect.appendChild(femaleOption);
+  const davidOption = document.createElement('option');
+  davidOption.value = 'david';
+  davidOption.textContent = 'David';
+  voiceSelect.appendChild(davidOption);
   
-  ttsState.selectedGender = 'male';
+  ttsState.selectedGender = 'neutral';
 }
 
 function setupTTSListeners() {
@@ -1641,10 +1644,15 @@ function speakCurrentParagraph() {
   
   // Create utterance
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.voice = ttsState.baseVoice;
-  utterance.lang = 'es-MX';
+  if (ttsState.selectedGender === 'david' && ttsState.davidVoice) {
+    utterance.voice = ttsState.davidVoice;
+    utterance.lang = ttsState.davidVoice.lang;
+  } else {
+    utterance.voice = ttsState.baseVoice;
+    utterance.lang = 'es-MX';
+  }
   utterance.rate = ttsState.rate;
-  utterance.pitch = ttsState.selectedGender === 'female' ? 1.3 : 0.85;
+  utterance.pitch = 1;
   utterance.volume = 1;
   
   // Event handlers
