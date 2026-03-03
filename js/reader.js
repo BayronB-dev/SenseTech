@@ -1359,7 +1359,7 @@ function loadVoices() {
   
   const davidOption = document.createElement('option');
   davidOption.value = 'david';
-  davidOption.textContent = 'David';
+  davidOption.textContent = 'Inglés';
   voiceSelect.appendChild(davidOption);
   
   ttsState.selectedGender = 'neutral';
