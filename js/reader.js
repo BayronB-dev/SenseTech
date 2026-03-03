@@ -80,7 +80,7 @@ async function initReader() {
   
   while (authAttempts < 3 && !user) {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabaseClient.auth.getSession();
       if (session?.user) {
         user = session.user;
       } else {
@@ -127,7 +127,7 @@ async function initReader() {
       const data = JSON.stringify({
         progress: progress,
         last_page: currentPage,
-        last_read_at: new Date().toISOString()
+        last_read: new Date().toISOString()
       });
       
       // Try to save synchronously
@@ -150,7 +150,7 @@ async function initReader() {
 async function loadResource(resourceId) {
   try {
     // Fetch resource
-    const { data: resource, error } = await supabase
+    const { data: resource, error } = await supabaseClient
       .from('resources')
       .select('*')
       .eq('id', resourceId)
@@ -194,7 +194,7 @@ async function loadResource(resourceId) {
 
 async function loadUserProgress(resourceId) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_progress')
       .select('*')
       .eq('user_id', currentUser.id)
@@ -208,7 +208,7 @@ async function loadUserProgress(resourceId) {
       updateProgressUI(data.progress || 0);
     } else {
       // Create initial progress record
-      const { data: newProgress } = await supabase
+      const { data: newProgress } = await supabaseClient
         .from('user_progress')
         .insert({
           user_id: currentUser.id,
@@ -217,7 +217,7 @@ async function loadUserProgress(resourceId) {
           last_page: 1,
           has_viewed: true,
           reading_time: 0,
-          last_read_at: new Date().toISOString()
+          last_read: new Date().toISOString()
         })
         .select()
         .single();
@@ -231,7 +231,7 @@ async function loadUserProgress(resourceId) {
 
 async function loadBookmarks(resourceId) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('bookmarks')
       .select('*')
       .eq('user_id', currentUser.id)
@@ -725,7 +725,7 @@ function saveVideoPosition(position) {
     if (!currentUser || !currentResource || !userProgress) return;
     
     try {
-      await supabase
+      await supabaseClient
         .from('user_progress')
         .update({ last_position: position })
         .eq('user_id', currentUser.id)
@@ -785,11 +785,11 @@ async function saveReadingTime() {
     const currentReadingTime = userProgress.reading_time || 0;
     const newReadingTime = currentReadingTime + 1;
     
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('user_progress')
       .update({ 
         reading_time: newReadingTime,
-        last_read_at: new Date().toISOString()
+        last_read: new Date().toISOString()
       })
       .eq('id', userProgress.id);
     
@@ -930,7 +930,7 @@ async function saveProgress(progressOverride = null) {
   try {
     const updateData = {
       progress: progress,
-      last_read_at: new Date().toISOString()
+      last_read: new Date().toISOString()
     };
     
     // For PDFs, save page number
@@ -944,7 +944,7 @@ async function saveProgress(progressOverride = null) {
       updateData.last_position = video.currentTime;
     }
     
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('user_progress')
       .update(updateData)
       .eq('id', userProgress.id);
@@ -987,7 +987,7 @@ async function saveBookmark() {
   }
   
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('bookmarks')
       .insert({
         user_id: currentUser.id,
@@ -1013,7 +1013,7 @@ async function saveBookmark() {
 
 async function deleteBookmark(bookmarkId) {
   try {
-    await supabase
+    await supabaseClient
       .from('bookmarks')
       .delete()
       .eq('id', bookmarkId);
@@ -1306,8 +1306,8 @@ let ttsState = {
   isPlaying: false,
   isPaused: false,
   currentUtterance: null,
-  voices: [],
-  selectedVoice: null,
+  baseVoice: null, // The actual system voice used as base
+  selectedGender: 'male', // 'male' or 'female'
   rate: 1,
   pageTexts: [], // Array of text content per page
   currentPageIndex: 0,
@@ -1340,32 +1340,26 @@ function initTTS() {
 function loadVoices() {
   const allVoices = speechSynthesis.getVoices();
   
-  // Only keep Spanish voices
-  ttsState.voices = allVoices.filter(v => v.lang.startsWith('es'));
+  // Find the best base voice: prefer Spanish, fallback to any available
+  let baseVoice = allVoices.find(v => v.lang.startsWith('es')) || allVoices[0] || null;
+  ttsState.baseVoice = baseVoice;
   
+  // Always show exactly 2 options: Masculino and Femenino
   const voiceSelect = document.getElementById('ttsVoiceSelect');
   voiceSelect.innerHTML = '';
   
-  if (ttsState.voices.length > 0) {
-    ttsState.voices.forEach((voice, index) => {
-      const option = document.createElement('option');
-      option.value = voice.name;
-      // Clean up voice name for display
-      const langName = voice.lang.includes('ES') ? 'España' : 
-                       voice.lang.includes('MX') ? 'México' :
-                       voice.lang.includes('CO') ? 'Colombia' :
-                       voice.lang.includes('AR') ? 'Argentina' : voice.lang;
-      option.textContent = `${voice.name.replace('Microsoft ', '').replace(' Online (Natural)', '')} (${langName})`;
-      if (index === 0) option.selected = true;
-      voiceSelect.appendChild(option);
-    });
-    ttsState.selectedVoice = ttsState.voices[0];
-  } else {
-    const option = document.createElement('option');
-    option.value = '';
-    option.textContent = 'No hay voces en español disponibles';
-    voiceSelect.appendChild(option);
-  }
+  const maleOption = document.createElement('option');
+  maleOption.value = 'male';
+  maleOption.textContent = '♂ Español Neutro - Masculino';
+  maleOption.selected = true;
+  voiceSelect.appendChild(maleOption);
+  
+  const femaleOption = document.createElement('option');
+  femaleOption.value = 'female';
+  femaleOption.textContent = '♀ Español Neutro - Femenino';
+  voiceSelect.appendChild(femaleOption);
+  
+  ttsState.selectedGender = 'male';
 }
 
 function setupTTSListeners() {
@@ -1399,10 +1393,9 @@ function setupTTSListeners() {
     });
   });
   
-  // Voice selection
+  // Voice selection (gender)
   document.getElementById('ttsVoiceSelect').addEventListener('change', (e) => {
-    const voiceName = e.target.value;
-    ttsState.selectedVoice = ttsState.voices.find(v => v.name === voiceName);
+    ttsState.selectedGender = e.target.value;
     
     // If currently playing, restart current paragraph with new voice
     if (ttsState.isPlaying && !ttsState.isPaused) {
@@ -1648,9 +1641,10 @@ function speakCurrentParagraph() {
   
   // Create utterance
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.voice = ttsState.selectedVoice;
+  utterance.voice = ttsState.baseVoice;
+  utterance.lang = 'es-MX';
   utterance.rate = ttsState.rate;
-  utterance.pitch = 1;
+  utterance.pitch = ttsState.selectedGender === 'female' ? 1.3 : 0.85;
   utterance.volume = 1;
   
   // Event handlers

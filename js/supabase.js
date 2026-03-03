@@ -8,7 +8,7 @@ const SUPABASE_URL = 'https://rxvlozzmqpultteyveye.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ4dmxvenptcXB1bHR0ZXl2ZXllIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQxODc0ODAsImV4cCI6MjA3OTc2MzQ4MH0.S_UyME1s6kmEBAaWTkso9ObZVjg2_o1CP5Lv8MFpt1Y';
 
 // Initialize Supabase Client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ========================================
 // AUTHENTICATION FUNCTIONS
@@ -27,7 +27,7 @@ async function supabaseSignUp(email, password, name, accessibilitySettings = {})
       screenReader: false
     };
     
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: authData, error: authError } = await supabaseClient.auth.signUp({
       email,
       password,
       options: {
@@ -45,7 +45,7 @@ async function supabaseSignUp(email, password, name, accessibilitySettings = {})
       // Small delay to ensure trigger has executed
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      const { error: profileError } = await supabase
+      const { error: profileError } = await supabaseClient
         .from('profiles')
         .update({
           name: name,
@@ -56,7 +56,7 @@ async function supabaseSignUp(email, password, name, accessibilitySettings = {})
       if (profileError) {
         console.error('Profile update error:', profileError);
         // Try upsert as fallback
-        await supabase.from('profiles').upsert({
+        await supabaseClient.from('profiles').upsert({
           id: authData.user.id,
           name: name,
           accessibility_settings: settings
@@ -76,7 +76,7 @@ async function supabaseSignUp(email, password, name, accessibilitySettings = {})
  */
 async function supabaseSignIn(email, password) {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
       email,
       password
     });
@@ -104,7 +104,7 @@ async function supabaseSignIn(email, password) {
  */
 async function supabaseSignOut() {
   try {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabaseClient.auth.signOut();
     if (error) throw error;
     
     localStorage.removeItem('currentUser');
@@ -121,7 +121,7 @@ async function supabaseSignOut() {
  * Get current session
  */
 async function getSession() {
-  const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { session }, error } = await supabaseClient.auth.getSession();
   return { session, error };
 }
 
@@ -130,11 +130,11 @@ async function getSession() {
  */
 async function getCurrentUserWithProfile() {
   try {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     
     if (userError || !user) return { user: null, profile: null };
 
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
       .select('*')
       .eq('id', user.id)
@@ -158,7 +158,7 @@ async function getCurrentUserWithProfile() {
  */
 async function updateUserProfile(userId, updates) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('profiles')
       .update(updates)
       .eq('id', userId)
@@ -189,13 +189,13 @@ async function uploadProfilePhoto(userId, file) {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}/avatar.${fileExt}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await supabaseClient.storage
       .from('avatars')
       .upload(fileName, file, { upsert: true });
 
     if (uploadError) throw uploadError;
 
-    const { data: { publicUrl } } = supabase.storage
+    const { data: { publicUrl } } = supabaseClient.storage
       .from('avatars')
       .getPublicUrl(fileName);
 
@@ -217,7 +217,7 @@ async function uploadProfilePhoto(userId, file) {
  */
 async function getResources(filters = {}) {
   try {
-    let query = supabase
+    let query = supabaseClient
       .from('resources')
       .select('*')
       .order('created_at', { ascending: false });
@@ -250,7 +250,7 @@ async function getFeaturedResources(limit = 4) {
  */
 async function getResourceById(id) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('resources')
       .select('*')
       .eq('id', id)
@@ -274,7 +274,7 @@ async function getResourceById(id) {
  */
 async function getUserProgress(userId) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_progress')
       .select('*, resources(*)')
       .eq('user_id', userId)
@@ -294,7 +294,7 @@ async function getUserProgress(userId) {
  */
 async function updateReadingProgress(userId, resourceId, progress) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_progress')
       .upsert({
         user_id: userId,
@@ -321,7 +321,7 @@ async function updateReadingProgress(userId, resourceId, progress) {
  */
 async function toggleFavorite(userId, resourceId) {
   try {
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseClient
       .from('user_progress')
       .select('is_favorite')
       .eq('user_id', userId)
@@ -330,7 +330,7 @@ async function toggleFavorite(userId, resourceId) {
 
     const newState = existing ? !existing.is_favorite : true;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_progress')
       .upsert({
         user_id: userId,
@@ -357,7 +357,7 @@ async function toggleFavorite(userId, resourceId) {
  */
 async function getFavorites(userId) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_progress')
       .select('*, resources(*)')
       .eq('user_id', userId)
@@ -400,7 +400,7 @@ async function requireAuthSupabase() {
  * Initialize auth state listener
  */
 function initAuthListener() {
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabaseClient.auth.onAuthStateChange((event, session) => {
     console.log('Auth state changed:', event);
     
     if (event === 'SIGNED_OUT') {

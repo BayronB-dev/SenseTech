@@ -230,7 +230,7 @@ function getTypeConfig(slug) {
 // Load types from database
 async function loadTypesFromDB() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('resource_types')
       .select('*')
       .order('name');
@@ -254,7 +254,7 @@ let resourceRatings = {};
 
 async function loadResourceRatings() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_progress')
       .select('resource_id, rating')
       .not('rating', 'is', null);
@@ -299,7 +299,7 @@ async function loadFeaturedResources() {
     // Load ratings first
     await loadResourceRatings();
     
-    const { data: resources, error } = await supabase
+    const { data: resources, error } = await supabaseClient
       .from('resources')
       .select('*')
       .order('favorite_count', { ascending: false })
@@ -352,7 +352,7 @@ async function loadCategories() {
   
   try {
     // Load categories from database
-    const { data: dbCategories } = await supabase
+    const { data: dbCategories } = await supabaseClient
       .from('categories')
       .select('*')
       .order('name');
@@ -365,7 +365,7 @@ async function loadCategories() {
     }
     
     // Count resources per category
-    const { data: resources } = await supabase
+    const { data: resources } = await supabaseClient
       .from('resources')
       .select('category');
     
@@ -417,13 +417,13 @@ async function loadUserProgress() {
   
   try {
     // Load user progress data
-    const { data: progressData } = await supabase
+    const { data: progressData } = await supabaseClient
       .from('user_progress')
       .select('*, resources(*)')
       .eq('user_id', currentUser.id);
     
     // Load total resources count
-    const { count: totalResources } = await supabase
+    const { count: totalResources } = await supabaseClient
       .from('resources')
       .select('*', { count: 'exact', head: true });
     
@@ -463,7 +463,7 @@ async function loadUserProgress() {
     // Render continue reading (sort by last read, exclude external links)
     const continueItems = progress
       .filter(p => getProgress(p) > 0 && getProgress(p) < 100 && p.resources?.type !== 'link')
-      .sort((a, b) => new Date(b.last_read_at || b.updated_at || 0) - new Date(a.last_read_at || a.updated_at || 0));
+      .sort((a, b) => new Date(b.last_read || b.updated_at || 0) - new Date(a.last_read || a.updated_at || 0));
     renderContinueReading(continueItems);
     
     // Render favorites
@@ -547,7 +547,7 @@ async function confirmRemoveResource() {
   
   try {
     // Reset progress to 0 so it no longer appears in continue reading
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('user_progress')
       .update({ progress: 0, last_page: 1 })
       .eq('id', pendingRemoveProgressId);
@@ -617,7 +617,7 @@ async function loadRecommendations() {
   
   try {
     // Get user's reading history (categories and types they've read)
-    const { data: userProgress } = await supabase
+    const { data: userProgress } = await supabaseClient
       .from('user_progress')
       .select('resources(category, type)')
       .eq('user_id', currentUser.id);
@@ -640,7 +640,7 @@ async function loadRecommendations() {
     const topType = Object.entries(types).sort((a, b) => b[1] - a[1])[0]?.[0];
     
     // Get resources user hasn't started yet
-    const { data: startedIds } = await supabase
+    const { data: startedIds } = await supabaseClient
       .from('user_progress')
       .select('resource_id')
       .eq('user_id', currentUser.id);
@@ -648,7 +648,7 @@ async function loadRecommendations() {
     const excludeIds = (startedIds || []).map(p => p.resource_id);
     
     // Build query for recommendations
-    let query = supabase
+    let query = supabaseClient
       .from('resources')
       .select('*')
       .order('favorite_count', { ascending: false })
@@ -667,7 +667,7 @@ async function loadRecommendations() {
     
     // If not enough recommendations, get popular ones
     if (!recommendations || recommendations.length < 3) {
-      const { data: popular } = await supabase
+      const { data: popular } = await supabaseClient
         .from('resources')
         .select('*')
         .order('view_count', { ascending: false })
@@ -732,18 +732,18 @@ async function loadUserStreak() {
   
   try {
     // Get user's activity dates
-    const { data: activity } = await supabase
+    const { data: activity } = await supabaseClient
       .from('user_progress')
-      .select('last_read_at, updated_at')
+      .select('last_read, updated_at')
       .eq('user_id', currentUser.id)
-      .order('last_read_at', { ascending: false });
+      .order('last_read', { ascending: false });
     
     if (!activity || activity.length === 0) return;
     
     // Calculate streak
     const dates = activity
       .map(a => {
-        const date = a.last_read_at || a.updated_at;
+        const date = a.last_read || a.updated_at;
         return date ? new Date(date).toDateString() : null;
       })
       .filter(Boolean);
@@ -806,7 +806,7 @@ async function loadActivityData() {
   
   try {
     // Get ALL user progress
-    const { data: progress, error } = await supabase
+    const { data: progress, error } = await supabaseClient
       .from('user_progress')
       .select('*, resources(type)')
       .eq('user_id', currentUser.id);
@@ -830,7 +830,7 @@ async function loadActivityData() {
       
       progress.forEach(p => {
         // Try different possible date field names
-        const activityDate = p.last_read_at || p.last_accessed_at || p.updated_at || p.created_at;
+        const activityDate = p.last_read || p.last_accessed_at || p.updated_at || p.created_at;
         if (!activityDate) return;
         
         const readingTime = p.reading_time || 0;
@@ -1066,11 +1066,11 @@ async function loadGoal() {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
     
-    const { data: weekProgress } = await supabase
+    const { data: weekProgress } = await supabaseClient
       .from('user_progress')
       .select('resource_id, progress, reading_time')
       .eq('user_id', currentUser.id)
-      .gte('last_read_at', weekAgo.toISOString());
+      .gte('last_read', weekAgo.toISOString());
     
     // Count only resources with actual activity
     const activeResources = weekProgress?.filter(p => 
@@ -1109,7 +1109,7 @@ async function updateGoalTarget(newTarget) {
   if (!currentUser) return;
   
   try {
-    await supabase
+    await supabaseClient
       .from('profiles')
       .update({ weekly_goal: newTarget })
       .eq('id', currentUser.id);
@@ -1142,11 +1142,11 @@ async function loadRelatedResources() {
   
   try {
     // Get user's last read resource
-    const { data: lastRead } = await supabase
+    const { data: lastRead } = await supabaseClient
       .from('user_progress')
       .select('resources(category, type)')
       .eq('user_id', currentUser.id)
-      .order('last_read_at', { ascending: false })
+      .order('last_read', { ascending: false })
       .limit(1)
       .single();
     
@@ -1160,7 +1160,7 @@ async function loadRelatedResources() {
     }
     
     // Get related resources
-    const { data: related } = await supabase
+    const { data: related } = await supabaseClient
       .from('resources')
       .select('id, title, type')
       .eq('category', lastRead.resources.category)

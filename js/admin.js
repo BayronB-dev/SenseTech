@@ -179,8 +179,8 @@ async function loadDashboard() {
   try {
     // Load stats
     const [resourcesRes, usersRes] = await Promise.all([
-      supabase.from('resources').select('id, view_count, favorite_count'),
-      supabase.from('profiles').select('id')
+      supabaseClient.from('resources').select('id, view_count, favorite_count'),
+      supabaseClient.from('profiles').select('id')
     ]);
     
     const resources = resourcesRes.data || [];
@@ -195,7 +195,7 @@ async function loadDashboard() {
     document.getElementById('statFavorites').textContent = totalFavorites;
     
     // Load recent resources
-    const { data: recentResources } = await supabase
+    const { data: recentResources } = await supabaseClient
       .from('resources')
       .select('id, title, type, created_at')
       .order('created_at', { ascending: false })
@@ -204,7 +204,7 @@ async function loadDashboard() {
     renderRecentResources(recentResources || []);
     
     // Load recent users
-    const { data: recentUsers } = await supabase
+    const { data: recentUsers } = await supabaseClient
       .from('profiles')
       .select('id, name, created_at')
       .order('created_at', { ascending: false })
@@ -264,7 +264,7 @@ function renderRecentUsers(users) {
 
 async function loadResources() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('resources')
       .select('*')
       .order('created_at', { ascending: false });
@@ -396,7 +396,7 @@ async function loadUsers() {
   try {
     console.log('Loading users from profiles table...');
     
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
@@ -479,7 +479,7 @@ async function toggleUserRole(userId, currentRole) {
   const newRole = currentRole === 'admin' ? 'user' : 'admin';
   
   try {
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('profiles')
       .update({ role: newRole })
       .eq('id', userId);
@@ -502,7 +502,7 @@ async function toggleUserRole(userId, currentRole) {
 
 async function loadCategoriesFromDB() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('categories')
       .select('*')
       .order('name');
@@ -658,7 +658,7 @@ async function saveCategory(e) {
   try {
     if (id) {
       // Update existing
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('categories')
         .update({ name, icon })
         .eq('id', parseInt(id));
@@ -674,7 +674,7 @@ async function saveCategory(e) {
       }
       
       // Insert new
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('categories')
         .insert({ slug, name, icon });
       
@@ -921,14 +921,14 @@ async function uploadFile(file, bucket, folder) {
   const fileExt = file.name.split('.').pop();
   const fileName = `${folder}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
   
-  const { data, error } = await supabase.storage
+  const { data, error } = await supabaseClient.storage
     .from(bucket)
     .upload(fileName, file);
   
   if (error) throw error;
   
   // Get public URL
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = supabaseClient.storage
     .from(bucket)
     .getPublicUrl(fileName);
   
@@ -1078,7 +1078,7 @@ async function saveResource(e) {
     
     if (id) {
       // Update
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('resources')
         .update(data)
         .eq('id', id);
@@ -1087,7 +1087,7 @@ async function saveResource(e) {
       showToast('Recurso actualizado');
     } else {
       // Create
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('resources')
         .insert(data);
       
@@ -1138,7 +1138,7 @@ async function confirmDelete() {
       console.log('Attempting to delete resource:', deleteTarget.id);
       
       // Primero eliminar registros relacionados en user_progress
-      const { error: progressError } = await supabase
+      const { error: progressError } = await supabaseClient
         .from('user_progress')
         .delete()
         .eq('resource_id', deleteTarget.id);
@@ -1148,7 +1148,7 @@ async function confirmDelete() {
       }
       
       // Luego eliminar el recurso
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('resources')
         .delete()
         .eq('id', deleteTarget.id);
@@ -1161,7 +1161,7 @@ async function confirmDelete() {
       showToast('Recurso eliminado');
       await loadResources();
     } else if (deleteTarget.type === 'category') {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('categories')
         .delete()
         .eq('id', deleteTarget.id);
@@ -1171,7 +1171,7 @@ async function confirmDelete() {
       showToast('Categoría eliminada');
       await loadCategories();
     } else if (deleteTarget.type === 'resourceType') {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('resource_types')
         .delete()
         .eq('id', deleteTarget.id);
@@ -1234,7 +1234,7 @@ function showToast(message, type = 'success') {
 
 async function loadTypesFromDB() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('resource_types')
       .select('*')
       .order('name');
@@ -1394,7 +1394,7 @@ async function saveType(e) {
   try {
     if (id) {
       // Update existing
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('resource_types')
         .update({ name, icon })
         .eq('id', parseInt(id));
@@ -1410,7 +1410,7 @@ async function saveType(e) {
       }
       
       // Insert new
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from('resource_types')
         .insert({ slug, name, icon });
       

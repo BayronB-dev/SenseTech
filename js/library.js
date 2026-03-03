@@ -46,7 +46,7 @@ function getTypeConfig(slug) {
 // Load types from database
 async function loadTypesFromDB() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('resource_types')
       .select('*')
       .order('name');
@@ -184,7 +184,7 @@ function applyUrlFilters() {
 
 async function loadCategoriesFromDB() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('categories')
       .select('*')
       .order('name');
@@ -349,7 +349,7 @@ async function loadUserFavorites() {
   
   try {
     // Get all user progress and filter favorites (handles both boolean and string)
-    const { data } = await supabase
+    const { data } = await supabaseClient
       .from('user_progress')
       .select('resource_id, is_favorite')
       .eq('user_id', currentUser.id);
@@ -370,7 +370,7 @@ async function loadResources() {
   showLoading(true);
   
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('resources')
       .select('*')
       .order('created_at', { ascending: false });
@@ -401,7 +401,7 @@ let resourceRatings = {};
 async function loadResourceRatings() {
   try {
     // Get all ratings grouped by resource
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('user_progress')
       .select('resource_id, rating')
       .not('rating', 'is', null);
@@ -845,7 +845,7 @@ async function toggleFavorite(btn) {
   
   try {
     // Check if progress record exists
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseClient
       .from('user_progress')
       .select('id')
       .eq('user_id', currentUser.id)
@@ -855,7 +855,7 @@ async function toggleFavorite(btn) {
     if (isCurrentlyFavorite) {
       // Remove from favorites
       if (existing) {
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('user_progress')
           .update({ is_favorite: false })
           .eq('id', existing.id);
@@ -864,14 +864,14 @@ async function toggleFavorite(btn) {
       }
       
       // Decrement favorite_count in resources table
-      const { data: resource } = await supabase
+      const { data: resource } = await supabaseClient
         .from('resources')
         .select('favorite_count')
         .eq('id', resourceId)
         .single();
       
       const newCount = Math.max(0, (resource?.favorite_count || 1) - 1);
-      await supabase
+      await supabaseClient
         .from('resources')
         .update({ favorite_count: newCount })
         .eq('id', resourceId);
@@ -886,7 +886,7 @@ async function toggleFavorite(btn) {
       // Add to favorites
       if (existing) {
         // Update existing record
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('user_progress')
           .update({ is_favorite: true })
           .eq('id', existing.id);
@@ -894,7 +894,7 @@ async function toggleFavorite(btn) {
         if (error) console.error('Error updating favorite:', error);
       } else {
         // Insert new record
-        const { error } = await supabase
+        const { error } = await supabaseClient
           .from('user_progress')
           .insert({
             user_id: currentUser.id,
@@ -907,14 +907,14 @@ async function toggleFavorite(btn) {
       }
       
       // Increment favorite_count in resources table
-      const { data: resource } = await supabase
+      const { data: resource } = await supabaseClient
         .from('resources')
         .select('favorite_count')
         .eq('id', resourceId)
         .single();
       
       const newCount = (resource?.favorite_count || 0) + 1;
-      await supabase
+      await supabaseClient
         .from('resources')
         .update({ favorite_count: newCount })
         .eq('id', resourceId);

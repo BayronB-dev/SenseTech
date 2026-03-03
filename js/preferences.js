@@ -274,7 +274,7 @@ function initPersonalInfoForm() {
       
       // Update email if changed (Supabase Auth)
       if (newEmail !== currentUser.email) {
-        const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
+        const { error: emailError } = await supabaseClient.auth.updateUser({ email: newEmail });
         if (emailError) {
           if (emailError.message.includes('already registered')) {
             showFormError('editEmail', 'Este correo ya está en uso');
@@ -288,7 +288,7 @@ function initPersonalInfoForm() {
       // Update password if provided
       if (newPassword && currentPassword) {
         // First verify current password by re-authenticating
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { error: signInError } = await supabaseClient.auth.signInWithPassword({
           email: currentUser.email,
           password: currentPassword
         });
@@ -299,7 +299,7 @@ function initPersonalInfoForm() {
         }
         
         // Update to new password
-        const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword });
+        const { error: passwordError } = await supabaseClient.auth.updateUser({ password: newPassword });
         if (passwordError) {
           showFormError('newPassword', passwordError.message);
           throw passwordError;

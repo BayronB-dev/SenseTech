@@ -34,7 +34,7 @@ function getTypeConfig(slug) {
 // Load types from database
 async function loadTypesFromDB() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('resource_types')
       .select('*')
       .order('name');
@@ -164,7 +164,7 @@ function showAdminButton() {
 
 async function loadCategoriesFromDB() {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('categories')
       .select('slug, name');
     
@@ -188,7 +188,7 @@ async function loadCategoriesFromDB() {
 async function loadResource(resourceId) {
   try {
     // Fetch resource
-    const { data: resource, error } = await supabase
+    const { data: resource, error } = await supabaseClient
       .from('resources')
       .select('*')
       .eq('id', resourceId)
@@ -235,7 +235,7 @@ async function incrementViewCount(resourceId) {
     const numericResourceId = parseInt(resourceId, 10);
     
     // Verificar si el usuario ya tiene un registro de progreso para este recurso
-    const { data: existingProgress, error: selectError } = await supabase
+    const { data: existingProgress, error: selectError } = await supabaseClient
       .from('user_progress')
       .select('id, has_viewed')
       .eq('user_id', currentUser.id)
@@ -253,7 +253,7 @@ async function incrementViewCount(resourceId) {
     // Marcar como visto en user_progress
     if (existingProgress) {
       // Actualizar registro existente
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseClient
         .from('user_progress')
         .update({ has_viewed: true })
         .eq('id', existingProgress.id);
@@ -261,7 +261,7 @@ async function incrementViewCount(resourceId) {
       if (updateError) console.error('Error updating has_viewed:', updateError);
     } else {
       // Crear nuevo registro
-      const { error: insertError } = await supabase
+      const { error: insertError } = await supabaseClient
         .from('user_progress')
         .insert({
           user_id: currentUser.id,
@@ -276,7 +276,7 @@ async function incrementViewCount(resourceId) {
     
     // Incrementar contador de vistas
     const currentCount = parseInt(currentResource.view_count) || 0;
-    const { error: viewError } = await supabase
+    const { error: viewError } = await supabaseClient
       .from('resources')
       .update({ view_count: currentCount + 1 })
       .eq('id', numericResourceId);
@@ -292,7 +292,7 @@ async function incrementViewCount(resourceId) {
 async function loadUserProgress(resourceId) {
   try {
     const numericResourceId = parseInt(resourceId, 10);
-    const { data } = await supabase
+    const { data } = await supabaseClient
       .from('user_progress')
       .select('*')
       .eq('user_id', currentUser.id)
@@ -536,7 +536,7 @@ async function submitRating(rating) {
   
   try {
     // Update user_progress with rating
-    const { error } = await supabase
+    const { error } = await supabaseClient
       .from('user_progress')
       .update({ rating: rating })
       .eq('user_id', currentUser.id)
@@ -594,7 +594,7 @@ async function loadRelatedResources() {
   
   try {
     // Get resources from same category
-    const { data: related } = await supabase
+    const { data: related } = await supabaseClient
       .from('resources')
       .select('id, title, author, type, cover_url')
       .eq('category', currentResource.category)
@@ -655,7 +655,7 @@ async function toggleFavorite() {
   
   try {
     // Check if progress record exists
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseClient
       .from('user_progress')
       .select('id')
       .eq('user_id', currentUser.id)
@@ -665,7 +665,7 @@ async function toggleFavorite() {
     if (isFavorite) {
       // Remove from favorites
       if (existing) {
-        await supabase
+        await supabaseClient
           .from('user_progress')
           .update({ is_favorite: false })
           .eq('id', existing.id);
@@ -674,14 +674,14 @@ async function toggleFavorite() {
       if (userProgress) userProgress.is_favorite = false;
       
       // Update favorite count
-      const { data: resource } = await supabase
+      const { data: resource } = await supabaseClient
         .from('resources')
         .select('favorite_count')
         .eq('id', resourceId)
         .single();
       
       const newCount = Math.max(0, (resource?.favorite_count || 1) - 1);
-      await supabase
+      await supabaseClient
         .from('resources')
         .update({ favorite_count: newCount })
         .eq('id', resourceId);
@@ -692,12 +692,12 @@ async function toggleFavorite() {
     } else {
       // Add to favorites
       if (existing) {
-        await supabase
+        await supabaseClient
           .from('user_progress')
           .update({ is_favorite: true })
           .eq('id', existing.id);
       } else {
-        await supabase
+        await supabaseClient
           .from('user_progress')
           .insert({
             user_id: currentUser.id,
@@ -714,14 +714,14 @@ async function toggleFavorite() {
       }
       
       // Update favorite count
-      const { data: resource } = await supabase
+      const { data: resource } = await supabaseClient
         .from('resources')
         .select('favorite_count')
         .eq('id', resourceId)
         .single();
       
       const newCount = (resource?.favorite_count || 0) + 1;
-      await supabase
+      await supabaseClient
         .from('resources')
         .update({ favorite_count: newCount })
         .eq('id', resourceId);
@@ -790,7 +790,7 @@ async function registerExternalView() {
   
   try {
     // Just mark as viewed, no progress tracking
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseClient
       .from('user_progress')
       .select('id')
       .eq('user_id', currentUser.id)
@@ -798,7 +798,7 @@ async function registerExternalView() {
       .single();
     
     if (!existing) {
-      await supabase
+      await supabaseClient
         .from('user_progress')
         .insert({
           user_id: currentUser.id,
@@ -807,7 +807,7 @@ async function registerExternalView() {
           last_accessed_at: new Date().toISOString()
         });
     } else {
-      await supabase
+      await supabaseClient
         .from('user_progress')
         .update({ last_accessed_at: new Date().toISOString() })
         .eq('id', existing.id);
@@ -821,7 +821,7 @@ async function updateProgress(percentage) {
   if (!currentUser || !currentResource) return;
   
   try {
-    await supabase
+    await supabaseClient
       .from('user_progress')
       .upsert({
         user_id: currentUser.id,
