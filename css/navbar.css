@@ -345,6 +345,7 @@
 }
 
 .mobile-nav .navbar-actions {
+  display: flex;
   margin-top: var(--space-xl);
   flex-direction: column;
   align-items: stretch;
