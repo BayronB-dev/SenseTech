@@ -1307,8 +1307,7 @@ let ttsState = {
   isPaused: false,
   currentUtterance: null,
   baseVoice: null, // The actual system voice used as base
-  davidVoice: null, // David voice reference
-  selectedGender: 'neutral', // 'neutral' or 'david'
+  selectedGender: 'neutral',
   rate: 1,
   pageTexts: [], // Array of text content per page
   currentPageIndex: 0,
@@ -1345,9 +1344,6 @@ function loadVoices() {
   let baseVoice = allVoices.find(v => v.lang.startsWith('es')) || allVoices[0] || null;
   ttsState.baseVoice = baseVoice;
   
-  // Find the David voice specifically
-  ttsState.davidVoice = allVoices.find(v => v.name.toLowerCase().includes('david')) || null;
-  
   const voiceSelect = document.getElementById('ttsVoiceSelect');
   voiceSelect.innerHTML = '';
   
@@ -1356,11 +1352,6 @@ function loadVoices() {
   neutralOption.textContent = 'Español Neutro';
   neutralOption.selected = true;
   voiceSelect.appendChild(neutralOption);
-  
-  const davidOption = document.createElement('option');
-  davidOption.value = 'david';
-  davidOption.textContent = 'Inglés';
-  voiceSelect.appendChild(davidOption);
   
   ttsState.selectedGender = 'neutral';
 }
@@ -1644,13 +1635,8 @@ function speakCurrentParagraph() {
   
   // Create utterance
   const utterance = new SpeechSynthesisUtterance(text);
-  if (ttsState.selectedGender === 'david' && ttsState.davidVoice) {
-    utterance.voice = ttsState.davidVoice;
-    utterance.lang = ttsState.davidVoice.lang;
-  } else {
-    utterance.voice = ttsState.baseVoice;
-    utterance.lang = 'es-MX';
-  }
+  utterance.voice = ttsState.baseVoice;
+  utterance.lang = 'es-MX';
   utterance.rate = ttsState.rate;
   utterance.pitch = 1;
   utterance.volume = 1;
