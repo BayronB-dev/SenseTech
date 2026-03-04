@@ -236,6 +236,22 @@
     </div>
   </main>
 
+  <!-- Email Confirmation Modal -->
+  <div id="emailConfirmModal" class="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+    <div class="modal-content" style="background:var(--bg-primary); border-radius:var(--radius-xl); padding:var(--space-2xl); max-width:480px; width:90%; margin:auto; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3); animation: fadeInUp 0.3s ease;">
+      <div style="font-size:64px; margin-bottom:var(--space-lg);">📧</div>
+      <h2 style="margin-bottom:var(--space-md); color:var(--text-primary);">¡Revisa tu correo electrónico!</h2>
+      <p style="color:var(--text-secondary); margin-bottom:var(--space-lg); line-height:1.6;">
+        Hemos enviado un enlace de confirmación a tu correo. 
+        <strong>Debes hacer clic en el enlace</strong> para activar tu cuenta antes de poder iniciar sesión.
+      </p>
+      <p style="color:var(--text-muted); font-size:var(--text-sm); margin-bottom:var(--space-xl);">
+        Si no encuentras el correo, revisa tu carpeta de spam o correo no deseado.
+      </p>
+      <a href="login.html" class="btn btn-primary" style="width:100%; justify-content:center;">Entendido, ir a Iniciar Sesión</a>
+    </div>
+  </div>
+
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
   <script src="js/supabase.js"></script>
