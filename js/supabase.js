@@ -34,7 +34,8 @@ async function supabaseSignUp(email, password, name, accessibilitySettings = {})
         data: { 
           name,
           accessibility_settings: settings
-        }
+        },
+        emailRedirectTo: 'https://bayronb-dev.github.io/SenseTech/login.html'
       }
     });
 

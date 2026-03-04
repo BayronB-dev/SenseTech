@@ -159,12 +159,15 @@ function initSignupForm() {
     
     // Check if email confirmation is required
     if (data.user && !data.session) {
-      // Email confirmation required
+      // Email confirmation required - show modal
       submitBtn.innerHTML = '✓ Cuenta creada';
-      showToast('Revisa tu correo para confirmar tu cuenta', 'success');
-      setTimeout(() => {
-        window.location.href = 'login.html';
-      }, 2000);
+      const modal = document.getElementById('emailConfirmModal');
+      if (modal) {
+        modal.style.display = 'flex';
+      } else {
+        showToast('Revisa tu correo para confirmar tu cuenta', 'success');
+        setTimeout(() => { window.location.href = 'login.html'; }, 3000);
+      }
     } else {
       // Auto-confirmed, redirect to home
       window.location.href = 'home.html';
